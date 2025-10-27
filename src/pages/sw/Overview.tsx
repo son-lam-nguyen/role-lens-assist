@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Clock, TrendingUp } from "lucide-react";
+import { Upload, FileText, Clock, TrendingUp, Mic } from "lucide-react";
 import { mockTranscripts } from "@/lib/mock/mockTranscripts";
+import { RecorderModal } from "@/components/recorder/RecorderModal";
 
 const Overview = () => {
   const navigate = useNavigate();
+  const [openRecorder, setOpenRecorder] = useState(false);
 
   const kpis = [
     { label: "Sessions Summarized", value: "24", icon: FileText, trend: "+8 this week" },
@@ -116,6 +119,15 @@ const Overview = () => {
               <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
               Create SOAP Note
             </Button>
+            <Button
+              onClick={() => setOpenRecorder(true)}
+              variant="outline"
+              className="w-full justify-start group hover:border-primary/50"
+              size="lg"
+            >
+              <Mic className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
+              Recordings
+            </Button>
 
             <div className="pt-4 mt-4 border-t">
               <h4 className="text-sm font-semibold mb-3">Recent Activity</h4>
@@ -134,6 +146,8 @@ const Overview = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RecorderModal open={openRecorder} onOpenChange={setOpenRecorder} />
     </div>
   );
 };
