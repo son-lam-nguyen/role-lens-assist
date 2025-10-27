@@ -15,25 +15,26 @@ export const RoleCard = ({ title, description, icon: Icon, route, features }: Ro
   const navigate = useNavigate();
   
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="card-hover border-2 hover:border-primary/20 bg-gradient-to-br from-card to-primary/5">
       <CardHeader>
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-          <Icon className="w-6 h-6 text-primary" />
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 shadow-lg">
+          <Icon className="w-7 h-7 text-white" />
         </div>
-        <CardTitle className="text-2xl">{title}</CardTitle>
-        <CardDescription className="text-base">{description}</CardDescription>
+        <CardTitle className="text-2xl font-bold">{title}</CardTitle>
+        <CardDescription className="text-base leading-relaxed">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {features.map((feature, idx) => (
-            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="text-primary mt-0.5">•</span>
+            <li key={idx} className="flex items-start gap-3 text-sm text-muted-foreground">
+              <span className="text-accent mt-0.5 text-lg">✓</span>
               <span>{feature}</span>
             </li>
           ))}
         </ul>
-        <Button onClick={() => navigate(route)} className="w-full" size="lg">
+        <Button onClick={() => navigate(route)} className="w-full group" size="lg">
           Go to Dashboard
+          <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
         </Button>
       </CardContent>
     </Card>

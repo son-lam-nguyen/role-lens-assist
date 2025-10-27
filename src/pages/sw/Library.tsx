@@ -35,10 +35,10 @@ const Library = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Resource Library</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">Resource Library</h1>
+        <p className="text-muted-foreground text-lg">
           Evidence-based guidelines and psychoeducation resources
         </p>
       </div>
@@ -76,7 +76,7 @@ const Library = () => {
 
           <div className="grid gap-4">
             {filteredGuidelines.map((guideline) => (
-              <Card key={guideline.id}>
+              <Card key={guideline.id} className="card-hover">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1 flex-1">
@@ -162,7 +162,7 @@ const Library = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             {filteredPsychoed.map((snippet) => (
-              <Card key={snippet.id}>
+              <Card key={snippet.id} className="card-hover">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1 flex-1">

@@ -32,17 +32,17 @@ const Cases = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Similar Cases</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">Similar Cases</h1>
+        <p className="text-muted-foreground text-lg">
           Find relevant cases and evidence-based guidelines
         </p>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
+          <CardTitle className="text-xl">Search & Filter</CardTitle>
           <CardDescription>Search by keywords or filter by topic tags</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -58,13 +58,13 @@ const Cases = () => {
           </div>
 
           <div>
-            <h4 className="text-sm font-medium mb-2">Filter by topics</h4>
+            <h4 className="text-sm font-semibold mb-2">Filter by topics</h4>
             <div className="flex flex-wrap gap-2">
               {allTags.map((tag) => (
                 <Badge
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
+                  className="cursor-pointer capitalize hover:scale-105 transition-transform"
                   onClick={() => toggleTag(tag)}
                   role="button"
                   tabIndex={0}
@@ -87,10 +87,14 @@ const Cases = () => {
         </h2>
 
         {results.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
+          <Card className="card-hover">
+            <CardContent className="py-16 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                <Search className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No matching cases found</h3>
               <p className="text-muted-foreground">
-                No cases found matching your search criteria. Try different keywords or tags.
+                Try different keywords or tags to find relevant cases.
               </p>
             </CardContent>
           </Card>

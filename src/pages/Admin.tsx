@@ -15,10 +15,10 @@ const Admin = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto fade-in">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Admin Panel</h1>
-            <p className="text-muted-foreground">Manage library content and resources</p>
+            <h1 className="text-4xl font-bold mb-2">Admin Panel</h1>
+            <p className="text-muted-foreground text-lg">Manage library content and resources</p>
           </div>
 
           <Tabs defaultValue="guidelines">
@@ -28,9 +28,9 @@ const Admin = () => {
             </TabsList>
 
             <TabsContent value="guidelines" className="space-y-4">
-              <Card>
+              <Card className="card-hover">
                 <CardHeader>
-                  <CardTitle>Add New Guideline</CardTitle>
+                  <CardTitle className="text-xl">Add New Guideline</CardTitle>
                   <CardDescription>All changes are session-only (demo mode)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -59,9 +59,9 @@ const Admin = () => {
             </TabsContent>
 
             <TabsContent value="cases" className="space-y-4">
-              <Card>
+              <Card className="card-hover">
                 <CardHeader>
-                  <CardTitle>Add New Case</CardTitle>
+                  <CardTitle className="text-xl">Add New Case</CardTitle>
                   <CardDescription>Mock case for retrieval testing</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

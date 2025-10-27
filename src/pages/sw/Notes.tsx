@@ -141,19 +141,19 @@ const Notes = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">SOAP Notes</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">SOAP Notes</h1>
+        <p className="text-muted-foreground text-lg">
           Create structured case notes with evidence-based citations
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Subjective</CardTitle>
+              <CardTitle className="text-xl">Subjective</CardTitle>
               <CardDescription>Client's reported experience and concerns</CardDescription>
             </CardHeader>
             <CardContent>
@@ -167,9 +167,9 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Objective</CardTitle>
+              <CardTitle className="text-xl">Objective</CardTitle>
               <CardDescription>Observable information and measurements</CardDescription>
             </CardHeader>
             <CardContent>
@@ -183,9 +183,9 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Assessment</CardTitle>
+              <CardTitle className="text-xl">Assessment</CardTitle>
               <CardDescription>Professional interpretation and analysis</CardDescription>
             </CardHeader>
             <CardContent>
@@ -199,9 +199,9 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Plan</CardTitle>
+              <CardTitle className="text-xl">Plan</CardTitle>
               <CardDescription>Intervention strategies and next steps</CardDescription>
             </CardHeader>
             <CardContent>
@@ -217,9 +217,9 @@ const Notes = () => {
         </div>
 
         <div className="space-y-6">
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>References</CardTitle>
+              <CardTitle className="text-lg">References</CardTitle>
               <CardDescription>Inserted guidelines and citations</CardDescription>
             </CardHeader>
             <CardContent>
@@ -254,9 +254,9 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Actions</CardTitle>
+              <CardTitle className="text-lg">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button onClick={handleExportPDF} className="w-full">

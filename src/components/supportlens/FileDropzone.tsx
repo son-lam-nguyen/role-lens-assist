@@ -70,8 +70,8 @@ export const FileDropzone = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "border-2 border-dashed rounded-2xl p-12 text-center transition-colors",
-          isDragging ? "border-primary bg-primary/5" : "border-border",
+          "border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300",
+          isDragging ? "border-primary bg-gradient-to-br from-primary/10 to-accent/10 shadow-lg scale-[1.02]" : "border-border hover:border-primary/50 hover:shadow-md",
           selectedFile && "border-success bg-success/5"
         )}
       >
@@ -85,8 +85,16 @@ export const FileDropzone = ({
         />
         
         {!selectedFile ? (
-          <label htmlFor="audio-upload" className="cursor-pointer">
-            <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <label htmlFor="audio-upload" className="cursor-pointer block">
+            <div className={cn(
+              "w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center transition-transform",
+              isDragging && "scale-110"
+            )}>
+              <Upload className={cn(
+                "w-8 h-8 text-primary transition-transform",
+                isDragging && "animate-bounce"
+              )} />
+            </div>
             <h3 className="text-lg font-semibold mb-2">Drop audio file here</h3>
             <p className="text-sm text-muted-foreground mb-4">
               or click to browse
@@ -97,9 +105,11 @@ export const FileDropzone = ({
           </label>
         ) : (
           <div className="flex items-center justify-center gap-3">
-            <File className="w-8 h-8 text-success" />
+            <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+              <File className="w-6 h-6 text-success" />
+            </div>
             <div className="flex-1 text-left">
-              <p className="font-medium">{selectedFile.name}</p>
+              <p className="font-semibold">{selectedFile.name}</p>
               <p className="text-sm text-muted-foreground">
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
               </p>
@@ -110,6 +120,7 @@ export const FileDropzone = ({
                 size="icon"
                 onClick={handleRemove}
                 aria-label="Remove file"
+                className="hover:bg-destructive/10 hover:text-destructive"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -128,8 +139,9 @@ export const FileDropzone = ({
       )}
 
       {selectedFile && !isProcessing && (
-        <Button onClick={handleProcess} className="w-full" size="lg">
+        <Button onClick={handleProcess} className="w-full group" size="lg">
           Process Audio
+          <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
         </Button>
       )}
     </div>

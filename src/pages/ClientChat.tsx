@@ -89,10 +89,10 @@ const ClientChat = () => {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto fade-in">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Client Support Portal</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-4xl font-bold mb-2">Client Support Portal</h1>
+            <p className="text-muted-foreground text-lg">
               Safe, AI-guided access to mental health information and coping strategies
             </p>
           </div>
@@ -104,11 +104,13 @@ const ClientChat = () => {
           )}
 
           <div className="grid gap-6 lg:grid-cols-4">
-            <Card className="lg:col-span-3 flex flex-col h-[calc(100vh-300px)]">
+            <Card className="lg:col-span-3 flex flex-col h-[calc(100vh-300px)] card-hover">
               <CardHeader className="pb-4">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-6 h-6 text-primary" />
-                  <CardTitle>Mental Health Support Chat</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <Bot className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl">Mental Health Support Chat</CardTitle>
                 </div>
                 <CardDescription>
                   Ask questions, learn coping strategies, and access resources
@@ -210,11 +212,13 @@ const ClientChat = () => {
             <div className="space-y-4">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <Card className="cursor-pointer card-hover">
                     <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <Library className="w-5 h-5 text-primary" />
-                        <CardTitle className="text-base">Coping Library</CardTitle>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Library className="w-5 h-5 text-primary" />
+                        </div>
+                        <CardTitle className="text-base font-semibold">Coping Library</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -268,16 +272,18 @@ const ClientChat = () => {
               </Sheet>
 
               <Card
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer card-hover border-destructive/30 bg-gradient-to-br from-destructive/5 to-destructive/10"
                 onClick={() => setShowContacts(true)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && setShowContacts(true)}
               >
                 <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-destructive" />
-                    <CardTitle className="text-base">Crisis Contacts</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-destructive" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-destructive">Crisis Contacts</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>

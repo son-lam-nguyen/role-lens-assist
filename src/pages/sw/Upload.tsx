@@ -67,17 +67,17 @@ const Upload = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Upload & Analyze</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">Upload & Analyze</h1>
+        <p className="text-muted-foreground text-lg">
           Upload session audio for automatic transcription and analysis
         </p>
       </div>
 
-      <Card>
+      <Card className="card-hover">
         <CardHeader>
-          <CardTitle>Audio Upload</CardTitle>
+          <CardTitle className="text-xl">Audio Upload</CardTitle>
           <CardDescription>
             Select an audio file (WAV, MP3, M4A) to transcribe and analyze
           </CardDescription>
@@ -93,10 +93,10 @@ const Upload = () => {
       </Card>
 
       {transcript && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+        <div className="grid gap-6 lg:grid-cols-3 fade-in">
+          <Card className="lg:col-span-2 card-hover">
             <CardHeader>
-              <CardTitle>Transcript</CardTitle>
+              <CardTitle className="text-xl">Transcript</CardTitle>
               <CardDescription>
                 Automatically generated from audio with PII masking
               </CardDescription>
@@ -107,9 +107,9 @@ const Upload = () => {
           </Card>
 
           <div className="space-y-6">
-            <Card>
+            <Card className="card-hover">
               <CardHeader>
-                <CardTitle>Summary</CardTitle>
+                <CardTitle className="text-lg">Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -139,18 +139,18 @@ const Upload = () => {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-hover">
               <CardHeader>
-                <CardTitle>Risk Analysis</CardTitle>
+                <CardTitle className="text-lg">Risk Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <RiskFlags flags={transcript.flags} />
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-hover">
               <CardHeader>
-                <CardTitle>Options</CardTitle>
+                <CardTitle className="text-lg">Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">

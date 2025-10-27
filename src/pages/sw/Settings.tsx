@@ -17,19 +17,19 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">Settings</h1>
+        <p className="text-muted-foreground text-lg">
           Configure application preferences and view crisis contacts
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <Card>
+          <Card className="card-hover">
             <CardHeader>
-              <CardTitle>Application Settings</CardTitle>
+              <CardTitle className="text-xl">Application Settings</CardTitle>
               <CardDescription>Manage default behaviors and preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -91,9 +91,9 @@ const Settings = () => {
           </Card>
         </div>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Australian Crisis Contacts</CardTitle>
+            <CardTitle className="text-xl">Australian Crisis Contacts</CardTitle>
             <CardDescription>Emergency and crisis support services</CardDescription>
           </CardHeader>
           <CardContent>

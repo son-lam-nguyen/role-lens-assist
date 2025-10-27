@@ -16,27 +16,29 @@ const Overview = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Support Worker Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-4xl font-bold mb-2">Support Worker Dashboard</h1>
+        <p className="text-muted-foreground text-lg">
           AI-powered tools for efficient case documentation and evidence-based support
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => (
-          <Card key={kpi.label}>
-            <CardHeader className="pb-2">
-              <CardDescription className="text-sm">{kpi.label}</CardDescription>
+        {kpis.map((kpi, idx) => (
+          <Card key={kpi.label} className="card-hover" style={{ animationDelay: `${idx * 0.1}s` }}>
+            <CardHeader className="pb-3">
+              <CardDescription className="text-sm font-medium">{kpi.label}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-3xl font-bold">{kpi.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{kpi.trend}</p>
+                  <div className="text-3xl font-bold mb-1">{kpi.value}</div>
+                  <p className="text-xs text-muted-foreground">{kpi.trend}</p>
                 </div>
-                <kpi.icon className="w-8 h-8 text-primary opacity-20" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <kpi.icon className="w-6 h-6 text-primary" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -44,24 +46,24 @@ const Overview = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Recent Transcripts</CardTitle>
+            <CardTitle className="text-xl">Recent Transcripts</CardTitle>
             <CardDescription>Your latest session recordings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {mockTranscripts.map((transcript) => (
                 <div
                   key={transcript.id}
-                  className="flex items-start justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="flex items-start justify-between p-4 rounded-xl border hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all cursor-pointer group"
                   onClick={() => navigate("/sw/upload")}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === "Enter" && navigate("/sw/upload")}
                 >
                   <div className="space-y-1 flex-1">
-                    <h4 className="font-medium">{transcript.title}</h4>
+                    <h4 className="font-semibold group-hover:text-primary transition-colors">{transcript.title}</h4>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-3 h-3" />
                       <span>{Math.floor(transcript.durationSec / 60)}m {transcript.durationSec % 60}s</span>
@@ -82,45 +84,51 @@ const Overview = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover">
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="text-xl">Quick Actions</CardTitle>
             <CardDescription>Common tasks and workflows</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Button
               onClick={() => navigate("/sw/upload")}
-              className="w-full justify-start"
+              className="w-full justify-start group"
               size="lg"
             >
-              <Upload className="w-5 h-5 mr-3" />
+              <Upload className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
               Upload New Audio
             </Button>
             <Button
               onClick={() => navigate("/sw/cases")}
               variant="outline"
-              className="w-full justify-start"
+              className="w-full justify-start group hover:border-primary/50"
               size="lg"
             >
-              <FileText className="w-5 h-5 mr-3" />
+              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
               Search Similar Cases
             </Button>
             <Button
               onClick={() => navigate("/sw/notes")}
               variant="outline"
-              className="w-full justify-start"
+              className="w-full justify-start group hover:border-primary/50"
               size="lg"
             >
-              <FileText className="w-5 h-5 mr-3" />
+              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
               Create SOAP Note
             </Button>
 
             <div className="pt-4 mt-4 border-t">
-              <h4 className="text-sm font-medium mb-3">Recent Activity</h4>
+              <h4 className="text-sm font-semibold mb-3">Recent Activity</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>✓ Uploaded "Family Conflict" - 2 hours ago</p>
-                <p>✓ Exported SOAP note - 5 hours ago</p>
-                <p>✓ Added 3 guidelines to notes - Yesterday</p>
+                <p className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> Uploaded "Family Conflict" - 2 hours ago
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> Exported SOAP note - 5 hours ago
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-accent">✓</span> Added 3 guidelines to notes - Yesterday
+                </p>
               </div>
             </div>
           </CardContent>

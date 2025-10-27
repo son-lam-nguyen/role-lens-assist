@@ -9,8 +9,8 @@ interface CrisisBannerProps {
 
 export const CrisisBanner = ({ onShowContacts }: CrisisBannerProps) => {
   return (
-    <Alert variant="destructive" className="border-2">
-      <AlertTriangle className="h-5 w-5" />
+    <Alert variant="destructive" className="border-2 animate-pulse-border bg-gradient-to-r from-destructive/10 to-destructive/5">
+      <AlertTriangle className="h-5 w-5 animate-pulse" />
       <AlertTitle className="text-lg font-bold">Crisis Support Available</AlertTitle>
       <AlertDescription className="space-y-3">
         <p>

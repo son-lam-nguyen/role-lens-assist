@@ -11,14 +11,14 @@ interface CaseCardProps {
 
 export const CaseCard = ({ case: caseData, onOpenGuideline }: CaseCardProps) => {
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="card-hover border hover:border-primary/30 bg-gradient-to-br from-card to-primary/5">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 flex-1">
-            <CardTitle className="text-lg">{caseData.title}</CardTitle>
-            <CardDescription>{caseData.summary}</CardDescription>
+            <CardTitle className="text-lg font-bold">{caseData.title}</CardTitle>
+            <CardDescription className="leading-relaxed">{caseData.summary}</CardDescription>
           </div>
-          <Badge variant="secondary" className="shrink-0">
+          <Badge variant="secondary" className="shrink-0 font-semibold">
             {Math.round(caseData.score * 100)}% match
           </Badge>
         </div>
@@ -26,7 +26,7 @@ export const CaseCard = ({ case: caseData, onOpenGuideline }: CaseCardProps) => 
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {caseData.tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="capitalize">
+            <Badge key={tag} variant="outline" className="capitalize text-xs">
               {tag.replace("-", " ")}
             </Badge>
           ))}
@@ -34,7 +34,7 @@ export const CaseCard = ({ case: caseData, onOpenGuideline }: CaseCardProps) => 
 
         {caseData.matchedKeywords.length > 0 && (
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">Matched keywords:</span>{" "}
+            <span className="font-semibold">Matched keywords:</span>{" "}
             {caseData.matchedKeywords.join(", ")}
           </div>
         )}
@@ -43,9 +43,9 @@ export const CaseCard = ({ case: caseData, onOpenGuideline }: CaseCardProps) => 
           onClick={onOpenGuideline}
           variant="outline"
           size="sm"
-          className="w-full"
+          className="w-full group hover:border-primary/50"
         >
-          <ExternalLink className="w-4 h-4 mr-2" />
+          <ExternalLink className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
           Open Guideline
         </Button>
       </CardContent>

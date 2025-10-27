@@ -3,8 +3,8 @@ import {
   LayoutDashboard,
   Upload,
   Search,
-  FileText,
-  Library,
+  NotebookPen,
+  BookOpen,
   Settings as SettingsIcon
 } from "lucide-react";
 import {
@@ -22,8 +22,8 @@ const navItems = [
   { title: "Overview", url: "/sw", icon: LayoutDashboard },
   { title: "Upload & Analyze", url: "/sw/upload", icon: Upload },
   { title: "Similar Cases", url: "/sw/cases", icon: Search },
-  { title: "Notes (SOAP)", url: "/sw/notes", icon: FileText },
-  { title: "Library", url: "/sw/library", icon: Library },
+  { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen },
+  { title: "Library", url: "/sw/library", icon: BookOpen },
   { title: "Settings", url: "/sw/settings", icon: SettingsIcon },
 ];
 
@@ -42,11 +42,13 @@ export const SWSidebar = () => {
                       to={item.url}
                       end={item.url === "/sw"}
                       className={({ isActive }) =>
-                        isActive ? "bg-sidebar-accent" : ""
+                        isActive 
+                          ? "bg-gradient-to-r from-primary/10 to-transparent border-l-2 border-primary font-medium" 
+                          : "hover:bg-sidebar-accent/50 transition-colors"
                       }
                     >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <item.icon className="w-5 h-5" />
+                      <span className="font-medium">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
