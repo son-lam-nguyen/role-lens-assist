@@ -66,27 +66,35 @@ const ClientChat = () => {
       formData.append("type", "text");
       formData.append("timestamp", new Date().toISOString());
 
-      const webhookResponse = await fetch("https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d", {
-        method: "POST",
-        body: formData,
-      });
+      const webhookResponse = await fetch(
+        "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!webhookResponse.ok) {
         throw new Error(`Webhook returned ${webhookResponse.status}`);
       }
 
       const responseData = await webhookResponse.json();
-      
+
       // Extract the response text from webhook
-      const responseText = responseData.response || responseData.message || responseData.text || "I received your message.";
-      
+      const responseText =
+        responseData.output ||
+        responseData.response ||
+        responseData.message ||
+        responseData.text ||
+        "I received your message.";
+
       const assistantMessage: ChatMessage = {
         id: `assistant_${Date.now()}`,
         role: "assistant",
         content: responseText,
         timestamp: new Date().toISOString(),
       };
-      
+
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Failed to get response from webhook:", error);
