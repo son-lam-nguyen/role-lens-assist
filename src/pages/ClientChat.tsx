@@ -10,9 +10,11 @@ import { CrisisBanner } from "@/components/supportlens/CrisisBanner";
 import { ChatMessage, generateChatbotResponse, quickReplies, detectCrisis } from "@/lib/mock/mockChatbot";
 import { mockPsychoedSnippets } from "@/lib/mock/mockPsychoed";
 import { crisisContactsAU } from "@/lib/mock/mockSettings";
-import { Send, Bot, User, Library, Phone } from "lucide-react";
+import { Send, Bot, User, Library, Phone, Mic, Square } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const ClientChat = () => {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -25,7 +27,10 @@ const ClientChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,16 +49,32 @@ const ClientChat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageText = input;
     setInput("");
     setIsLoading(true);
 
     // Check for crisis keywords
-    if (detectCrisis(input)) {
+    if (detectCrisis(messageText)) {
       setShowCrisisBanner(true);
     }
 
+    // Send text to n8n webhook
     try {
-      const response = await generateChatbotResponse(input);
+      const formData = new FormData();
+      formData.append('text', messageText);
+      formData.append('type', 'text');
+      formData.append('timestamp', new Date().toISOString());
+      
+      await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
+        method: 'POST',
+        body: formData,
+      });
+    } catch (error) {
+      console.error('Failed to send text to webhook:', error);
+    }
+
+    try {
+      const response = await generateChatbotResponse(messageText);
       setMessages(prev => [...prev, response]);
     } catch (error) {
       const errorMessage: ChatMessage = {
@@ -65,6 +86,90 @@ const ClientChat = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await sendAudioToWebhook(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast({
+        title: "Recording started",
+        description: "Click again to stop and send",
+      });
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast({
+        title: "Error",
+        description: "Could not access microphone",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const sendAudioToWebhook = async (audioBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      const filename = `client_audio_${Date.now()}.webm`;
+      formData.append('data', audioBlob, filename);
+      formData.append('filename', filename);
+      formData.append('filesize', audioBlob.size.toString());
+      formData.append('type', 'audio');
+      formData.append('timestamp', new Date().toISOString());
+
+      const response = await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Audio sent",
+          description: "Your audio message has been sent successfully",
+        });
+        
+        // Add a message to the chat showing audio was sent
+        const audioMessage: ChatMessage = {
+          id: `audio_${Date.now()}`,
+          role: "user",
+          content: "🎤 Audio message sent",
+          timestamp: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, audioMessage]);
+      } else {
+        throw new Error('Failed to send audio');
+      }
+    } catch (error) {
+      console.error('Failed to send audio to webhook:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send audio message",
+        variant: "destructive",
+      });
     }
   };
 
@@ -193,12 +298,21 @@ const ClientChat = () => {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                      disabled={isLoading}
+                      disabled={isLoading || isRecording}
                       aria-label="Chat message"
                     />
                     <Button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      variant={isRecording ? "destructive" : "outline"}
+                      size="icon"
+                      aria-label={isRecording ? "Stop recording" : "Record audio"}
+                      disabled={isLoading}
+                    >
+                      {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </Button>
+                    <Button
                       onClick={handleSend}
-                      disabled={!input.trim() || isLoading}
+                      disabled={!input.trim() || isLoading || isRecording}
                       size="icon"
                       aria-label="Send message"
                     >
