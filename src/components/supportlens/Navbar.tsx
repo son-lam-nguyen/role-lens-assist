@@ -51,7 +51,7 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="border-b bg-card/95 sticky top-0 z-50 backdrop-blur-lg shadow-sm">
+    <nav className="fixed top-0 left-0 w-full h-16 z-50 bg-white/80 backdrop-blur border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button

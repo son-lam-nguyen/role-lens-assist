@@ -29,7 +29,7 @@ const navItems = [
 
 export const SWSidebar = () => {
   return (
-    <Sidebar>
+    <Sidebar className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-40 bg-background">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Support Worker</SidebarGroupLabel>

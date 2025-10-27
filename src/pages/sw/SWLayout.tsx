@@ -8,7 +8,7 @@ const SWLayout = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <SidebarProvider>
-        <div className="flex min-h-[calc(100vh-4rem)] w-full">
+        <div className="flex pt-16 w-full">
           <SWSidebar />
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 py-8">
