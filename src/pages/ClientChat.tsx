@@ -19,9 +19,10 @@ const ClientChat = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi! I'm here to provide mental health information and coping strategies. I can't diagnose or prescribe, but I can share evidence-based techniques and connect you with professional support. How can I help today?",
-      timestamp: new Date().toISOString()
-    }
+      content:
+        "Hi! I'm here to provide mental health information and coping strategies. I can't diagnose or prescribe, but I can share evidence-based techniques and connect you with professional support. How can I help today?",
+      timestamp: new Date().toISOString(),
+    },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,10 +46,10 @@ const ClientChat = () => {
       id: `user_${Date.now()}`,
       role: "user",
       content: input,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const messageText = input;
     setInput("");
     setIsLoading(true);
@@ -61,29 +62,30 @@ const ClientChat = () => {
     // Send text to n8n webhook
     try {
       const formData = new FormData();
-      formData.append('text', messageText);
-      formData.append('type', 'text');
-      formData.append('timestamp', new Date().toISOString());
-      
-      await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
-        method: 'POST',
+      formData.append("text", messageText);
+      formData.append("type", "text");
+      formData.append("timestamp", new Date().toISOString());
+
+      await fetch("https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d", {
+        method: "POST",
         body: formData,
       });
     } catch (error) {
-      console.error('Failed to send text to webhook:', error);
+      console.error("Failed to send text to webhook:", error);
     }
 
     try {
       const response = await generateChatbotResponse(messageText);
-      setMessages(prev => [...prev, response]);
+      setMessages((prev) => [...prev, response]);
     } catch (error) {
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: "assistant",
-        content: "I apologize, but I encountered an error. Please try again or contact your support worker for assistance.",
-        timestamp: new Date().toISOString()
+        content:
+          "I apologize, but I encountered an error. Please try again or contact your support worker for assistance.",
+        timestamp: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -103,9 +105,9 @@ const ClientChat = () => {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         await sendAudioToWebhook(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
@@ -115,7 +117,7 @@ const ClientChat = () => {
         description: "Click again to stop and send",
       });
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error("Error accessing microphone:", error);
       toast({
         title: "Error",
         description: "Could not access microphone",
@@ -135,36 +137,39 @@ const ClientChat = () => {
     try {
       const formData = new FormData();
       const filename = `client_audio_${Date.now()}.webm`;
-      formData.append('data', audioBlob, filename);
-      formData.append('filename', filename);
-      formData.append('filesize', audioBlob.size.toString());
-      formData.append('type', 'audio');
-      formData.append('timestamp', new Date().toISOString());
+      formData.append("data", audioBlob, filename);
+      formData.append("filename", filename);
+      formData.append("filesize", audioBlob.size.toString());
+      formData.append("type", "audio");
+      formData.append("timestamp", new Date().toISOString());
 
-      const response = await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (response.ok) {
         toast({
           title: "Audio sent",
           description: "Your audio message has been sent successfully",
         });
-        
+
         // Add a message to the chat showing audio was sent
         const audioMessage: ChatMessage = {
           id: `audio_${Date.now()}`,
           role: "user",
           content: "🎤 Audio message sent",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
-        setMessages(prev => [...prev, audioMessage]);
+        setMessages((prev) => [...prev, audioMessage]);
       } else {
-        throw new Error('Failed to send audio');
+        throw new Error("Failed to send audio");
       }
     } catch (error) {
-      console.error('Failed to send audio to webhook:', error);
+      console.error("Failed to send audio to webhook:", error);
       toast({
         title: "Error",
         description: "Failed to send audio message",
@@ -184,9 +189,9 @@ const ClientChat = () => {
       id: `snippet_${Date.now()}`,
       role: "assistant",
       content: content,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, snippetMessage]);
+    setMessages((prev) => [...prev, snippetMessage]);
   };
 
   return (
@@ -217,9 +222,7 @@ const ClientChat = () => {
                   </div>
                   <CardTitle className="text-xl">Mental Health Support Chat</CardTitle>
                 </div>
-                <CardDescription>
-                  Ask questions, learn coping strategies, and access resources
-                </CardDescription>
+                <CardDescription>Ask questions, learn coping strategies, and access resources</CardDescription>
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
@@ -228,9 +231,7 @@ const ClientChat = () => {
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex gap-3 ${
-                          message.role === "user" ? "justify-end" : "justify-start"
-                        }`}
+                        className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         {message.role === "assistant" && (
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -239,17 +240,11 @@ const ClientChat = () => {
                         )}
                         <div
                           className={`rounded-2xl px-4 py-3 max-w-[80%] ${
-                            message.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                            message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                            {message.content}
-                          </p>
-                          <p className="text-xs opacity-70 mt-2">
-                            {new Date(message.timestamp).toLocaleTimeString()}
-                          </p>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-2">{new Date(message.timestamp).toLocaleTimeString()}</p>
                         </div>
                         {message.role === "user" && (
                           <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
@@ -265,9 +260,18 @@ const ClientChat = () => {
                         </div>
                         <div className="rounded-2xl px-4 py-3 bg-muted">
                           <div className="flex gap-1">
-                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <div
+                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              style={{ animationDelay: "0ms" }}
+                            />
+                            <div
+                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              style={{ animationDelay: "150ms" }}
+                            />
+                            <div
+                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              style={{ animationDelay: "300ms" }}
+                            />
                           </div>
                         </div>
                       </div>
@@ -336,18 +340,14 @@ const ClientChat = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Browse self-help techniques and strategies
-                      </p>
+                      <p className="text-sm text-muted-foreground">Browse self-help techniques and strategies</p>
                     </CardContent>
                   </Card>
                 </SheetTrigger>
                 <SheetContent>
                   <SheetHeader>
                     <SheetTitle>Coping Strategies</SheetTitle>
-                    <SheetDescription>
-                      Click any technique to add it to the chat
-                    </SheetDescription>
+                    <SheetDescription>Click any technique to add it to the chat</SheetDescription>
                   </SheetHeader>
                   <ScrollArea className="h-[calc(100vh-150px)] mt-6">
                     <div className="space-y-4">
@@ -374,9 +374,7 @@ const ClientChat = () => {
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-xs text-muted-foreground line-clamp-3">
-                              {snippet.content}
-                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-3">{snippet.content}</p>
                           </CardContent>
                         </Card>
                       ))}
@@ -401,9 +399,7 @@ const ClientChat = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    24/7 emergency and crisis support
-                  </p>
+                  <p className="text-sm text-muted-foreground">24/7 emergency and crisis support</p>
                 </CardContent>
               </Card>
 
@@ -413,9 +409,8 @@ const ClientChat = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    This chatbot provides general information only. It cannot diagnose conditions
-                    or prescribe medications. For personalized support, please contact your
-                    support worker or healthcare provider.
+                    This chatbot provides general information only. It cannot diagnose conditions or prescribe
+                    medications. For personalized support, please contact your support worker or healthcare provider.
                   </p>
                 </CardContent>
               </Card>
@@ -428,9 +423,7 @@ const ClientChat = () => {
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Crisis Support Contacts</SheetTitle>
-            <SheetDescription>
-              24/7 support services available in Australia
-            </SheetDescription>
+            <SheetDescription>24/7 support services available in Australia</SheetDescription>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-150px)] mt-6">
             <div className="space-y-4">
@@ -447,7 +440,7 @@ const ClientChat = () => {
                   </CardHeader>
                   <CardContent>
                     <Button variant="outline" size="sm" className="w-full" asChild>
-                      <a href={`tel:${contact.phone.replace(/\s/g, '')}`}>
+                      <a href={`tel:${contact.phone.replace(/\s/g, "")}`}>
                         <Phone className="w-3 h-3 mr-2" />
                         {contact.phone}
                       </a>
