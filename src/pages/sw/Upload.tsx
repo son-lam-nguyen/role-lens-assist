@@ -44,11 +44,30 @@ const Upload = () => {
     }, 200);
 
     try {
+      // Send audio to n8n webhook
+      const formData = new FormData();
+      formData.append('audio', selectedFile);
+      formData.append('filename', selectedFile.name);
+      formData.append('filesize', selectedFile.size.toString());
+
+      const response = await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Webhook request failed');
+      }
+
+      const webhookResult = await response.json();
+      
+      // Use mock data for display (replace with webhook response structure when available)
       const result = await processAudioMock(selectedFile);
       setProgress(100);
       setTranscript(result);
-      toast.success("Audio processed successfully!");
+      toast.success("Audio sent to webhook and processed successfully!");
     } catch (error) {
+      console.error('Webhook error:', error);
       toast.error("Failed to process audio");
     } finally {
       setIsProcessing(false);
