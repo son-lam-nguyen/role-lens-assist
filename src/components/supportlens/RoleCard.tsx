@@ -10,9 +10,10 @@ interface RoleCardProps {
   icon: LucideIcon;
   route: string;
   features: string[];
+  buttonText?: string;
 }
 
-export const RoleCard = ({ title, description, icon: Icon, route, features }: RoleCardProps) => {
+export const RoleCard = ({ title, description, icon: Icon, route, features, buttonText = "Go to Dashboard" }: RoleCardProps) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -44,7 +45,7 @@ export const RoleCard = ({ title, description, icon: Icon, route, features }: Ro
           ))}
         </ul>
         <Button onClick={handleNavigate} className="w-full group" size="lg">
-          Go to Dashboard
+          {buttonText}
           <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
         </Button>
       </CardContent>

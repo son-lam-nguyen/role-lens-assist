@@ -48,6 +48,7 @@ const Landing = () => {
             description="Safe, guided access to mental health information and support"
             icon={MessageCircle}
             route="/client"
+            buttonText="Go to Portal"
             features={[
               "Chat with AI for mental health information",
               "Access coping strategies and techniques",
