@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/lib/auth/authContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Login from "./pages/auth/Login";
 import SWLayout from "./pages/sw/SWLayout";
 import Overview from "./pages/sw/Overview";
 import Upload from "./pages/sw/Upload";
@@ -19,26 +22,36 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/sw" element={<SWLayout />}>
-            <Route index element={<Overview />} />
-            <Route path="upload" element={<Upload />} />
-            <Route path="cases" element={<Cases />} />
-            <Route path="notes" element={<Notes />} />
-            <Route path="library" element={<Library />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-          <Route path="/client" element={<ClientChat />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route
+              path="/sw"
+              element={
+                <ProtectedRoute requiredRole="support-worker">
+                  <SWLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Overview />} />
+              <Route path="upload" element={<Upload />} />
+              <Route path="cases" element={<Cases />} />
+              <Route path="notes" element={<Notes />} />
+              <Route path="library" element={<Library />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            <Route path="/client" element={<ClientChat />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

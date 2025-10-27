@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Stethoscope, Home } from "lucide-react";
+import { Stethoscope, Home, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -8,10 +8,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/auth/authContext";
 
 export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const getCurrentRole = () => {
     if (location.pathname.startsWith("/sw")) return "sw";
@@ -23,6 +34,20 @@ export const Navbar = () => {
   const handleRoleChange = (value: string) => {
     if (value === "home") navigate("/");
     else navigate(`/${value}`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -53,14 +78,56 @@ export const Navbar = () => {
           )}
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/")}
-          aria-label="Go to home"
-        >
-          <Home className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2" aria-label="User menu">
+                  <Avatar className="w-8 h-8">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs">
+                      {user ? getInitials(user.displayName) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium hidden sm:inline">
+                    {user?.displayName}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">{user?.displayName}</p>
+                    <p className="text-xs text-muted-foreground">@{user?.username}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/auth/login?next=/sw")}
+              aria-label="Sign in"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            aria-label="Go to home"
+          >
+            <Home className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
     </nav>
   );
