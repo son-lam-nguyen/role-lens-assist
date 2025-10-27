@@ -59,25 +59,37 @@ const ClientChat = () => {
       setShowCrisisBanner(true);
     }
 
-    // Send text to n8n webhook
+    // Send text to n8n webhook and get response
     try {
       const formData = new FormData();
       formData.append("text", messageText);
       formData.append("type", "text");
       formData.append("timestamp", new Date().toISOString());
 
-      await fetch("https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d", {
+      const webhookResponse = await fetch("https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d", {
         method: "POST",
         body: formData,
       });
-    } catch (error) {
-      console.error("Failed to send text to webhook:", error);
-    }
 
-    try {
-      const response = await generateChatbotResponse(messageText);
-      setMessages((prev) => [...prev, response]);
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook returned ${webhookResponse.status}`);
+      }
+
+      const responseData = await webhookResponse.json();
+      
+      // Extract the response text from webhook
+      const responseText = responseData.response || responseData.message || responseData.text || "I received your message.";
+      
+      const assistantMessage: ChatMessage = {
+        id: `assistant_${Date.now()}`,
+        role: "assistant",
+        content: responseText,
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
+      console.error("Failed to get response from webhook:", error);
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: "assistant",
