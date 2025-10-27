@@ -46,7 +46,7 @@ const Upload = () => {
     try {
       // Send audio to n8n webhook
       const formData = new FormData();
-      formData.append('audio', selectedFile);
+      formData.append('data', selectedFile);
       formData.append('filename', selectedFile.name);
       formData.append('filesize', selectedFile.size.toString());
 
