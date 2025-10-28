@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Mic, Square, Pause, Play, Download } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import { blobToWav, decodeToPCM } from "@/lib/audio/wav";
 
 interface RecorderModalProps {
   open: boolean;
@@ -20,34 +21,22 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState("");
+  const [exportFormat, setExportFormat] = useState<'wav' | 'mp3' | 'ogg'>('wav');
   const [isConverting, setIsConverting] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
-  const ffmpegRef = useRef<FFmpeg | null>(null);
+  const mp3WorkerRef = useRef<Worker | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadFFmpeg = async () => {
-      const ffmpeg = new FFmpeg();
-      ffmpegRef.current = ffmpeg;
-      
-      try {
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-        await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
-      } catch (error) {
-        console.error('Failed to load FFmpeg:', error);
-      }
-    };
-
-    loadFFmpeg();
+    // Initialize MP3 worker
+    mp3WorkerRef.current = new Worker(new URL('@/workers/mp3.worker.ts', import.meta.url), { type: 'module' });
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (mp3WorkerRef.current) mp3WorkerRef.current.terminate();
     };
   }, []);
 
@@ -145,53 +134,74 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   };
 
   const downloadRecording = async () => {
-    if (!recordedBlob || !ffmpegRef.current) return;
+    if (!recordedBlob) return;
+
+    const filename = recordingName.trim() || 'recording';
 
     try {
       setIsConverting(true);
-      toast.loading("Converting to MP3...");
 
-      const ffmpeg = ffmpegRef.current;
-      
-      // Write input file
-      await ffmpeg.writeFile('input.webm', await fetchFile(recordedBlob));
-      
-      // Convert to MP3
-      await ffmpeg.exec(['-i', 'input.webm', '-codec:a', 'libmp3lame', '-qscale:a', '2', 'output.mp3']);
-      
-      // Read output file
-      const data = await ffmpeg.readFile('output.mp3');
-      const mp3Blob = new Blob([new Uint8Array(data as Uint8Array)], { type: 'audio/mp3' });
-      
-      // Download
-      const url = URL.createObjectURL(mp3Blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${recordingName || 'recording'}.mp3`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      // Cleanup
-      await ffmpeg.deleteFile('input.webm');
-      await ffmpeg.deleteFile('output.mp3');
-      
-      toast.dismiss();
-      toast.success("Recording downloaded as MP3");
+      if (exportFormat === 'wav') {
+        toast.loading("Converting to WAV...");
+        const wavBlob = await blobToWav(recordedBlob);
+        downloadBlob(wavBlob, `${filename}.wav`);
+        toast.dismiss();
+        toast.success("Recording downloaded as WAV");
+      } else if (exportFormat === 'mp3') {
+        toast.loading("Converting to MP3...");
+        const { pcm, sampleRate } = await decodeToPCM(recordedBlob);
+        const mp3Blob = await encodeMp3InWorker(pcm, sampleRate);
+        downloadBlob(mp3Blob, `${filename}.mp3`);
+        toast.dismiss();
+        toast.success("Recording downloaded as MP3");
+      } else {
+        // OGG/Opus - original format
+        downloadBlob(recordedBlob, `${filename}.ogg`);
+        toast.success("Recording downloaded as OGG");
+      }
     } catch (error) {
       console.error('Conversion failed:', error);
       toast.dismiss();
       toast.error("Failed to convert recording. Downloading as WebM instead.");
-      
-      // Fallback to WebM
-      const url = URL.createObjectURL(recordedBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${recordingName || 'recording'}.webm`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(recordedBlob, `${filename}.webm`);
     } finally {
       setIsConverting(false);
     }
+  };
+
+  const encodeMp3InWorker = (pcm: Float32Array, sampleRate: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      if (!mp3WorkerRef.current) {
+        reject(new Error('MP3 worker not initialized'));
+        return;
+      }
+
+      const worker = mp3WorkerRef.current;
+
+      worker.onmessage = (e: MessageEvent) => {
+        if (e.data.success) {
+          const blob = new Blob([e.data.data], { type: 'audio/mpeg' });
+          resolve(blob);
+        } else {
+          reject(new Error(e.data.error));
+        }
+      };
+
+      worker.onerror = (error) => {
+        reject(error);
+      };
+
+      worker.postMessage({ pcm, sampleRate }, [pcm.buffer]);
+    });
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const resetRecorder = () => {
@@ -267,6 +277,33 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Export Format</Label>
+                  <RadioGroup value={exportFormat} onValueChange={(v) => setExportFormat(v as 'wav' | 'mp3' | 'ogg')}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="wav" id="wav" />
+                      <Label htmlFor="wav" className="font-normal cursor-pointer">
+                        WAV (fast, larger)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="mp3" id="mp3" />
+                      <Label htmlFor="mp3" className="font-normal cursor-pointer">
+                        MP3 (smaller, slower)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="ogg" id="ogg" />
+                      <Label htmlFor="ogg" className="font-normal cursor-pointer">
+                        OGG (original)
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    WAV saves instantly; MP3 may take a few seconds.
+                  </p>
+                </div>
+
                 <div className="flex gap-2">
                   <Button
                     onClick={saveRecording}
@@ -283,7 +320,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                     disabled={isConverting}
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    {isConverting ? "Converting..." : "Download MP3"}
+                    {isConverting ? "Converting..." : `Download ${exportFormat.toUpperCase()}`}
                   </Button>
                 </div>
 
