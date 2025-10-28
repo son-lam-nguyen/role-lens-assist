@@ -6,6 +6,8 @@ import { Mic, Square, Pause, Play, Download } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 
 interface RecorderModalProps {
   open: boolean;
@@ -18,13 +20,32 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState("");
+  const [isConverting, setIsConverting] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const ffmpegRef = useRef<FFmpeg | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const loadFFmpeg = async () => {
+      const ffmpeg = new FFmpeg();
+      ffmpegRef.current = ffmpeg;
+      
+      try {
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+      } catch (error) {
+        console.error('Failed to load FFmpeg:', error);
+      }
+    };
+
+    loadFFmpeg();
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
@@ -123,16 +144,54 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     resetRecorder();
   };
 
-  const downloadRecording = () => {
-    if (!recordedBlob) return;
+  const downloadRecording = async () => {
+    if (!recordedBlob || !ffmpegRef.current) return;
 
-    const url = URL.createObjectURL(recordedBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${recordingName || 'recording'}.webm`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Recording downloaded");
+    try {
+      setIsConverting(true);
+      toast.loading("Converting to MP3...");
+
+      const ffmpeg = ffmpegRef.current;
+      
+      // Write input file
+      await ffmpeg.writeFile('input.webm', await fetchFile(recordedBlob));
+      
+      // Convert to MP3
+      await ffmpeg.exec(['-i', 'input.webm', '-codec:a', 'libmp3lame', '-qscale:a', '2', 'output.mp3']);
+      
+      // Read output file
+      const data = await ffmpeg.readFile('output.mp3');
+      const mp3Blob = new Blob([new Uint8Array(data as Uint8Array)], { type: 'audio/mp3' });
+      
+      // Download
+      const url = URL.createObjectURL(mp3Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${recordingName || 'recording'}.mp3`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      // Cleanup
+      await ffmpeg.deleteFile('input.webm');
+      await ffmpeg.deleteFile('output.mp3');
+      
+      toast.dismiss();
+      toast.success("Recording downloaded as MP3");
+    } catch (error) {
+      console.error('Conversion failed:', error);
+      toast.dismiss();
+      toast.error("Failed to convert recording. Downloading as WebM instead.");
+      
+      // Fallback to WebM
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${recordingName || 'recording'}.webm`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const resetRecorder = () => {
@@ -221,9 +280,10 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                     variant="outline"
                     size="lg"
                     className="flex-1"
+                    disabled={isConverting}
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    Download
+                    {isConverting ? "Converting..." : "Download MP3"}
                   </Button>
                 </div>
 
