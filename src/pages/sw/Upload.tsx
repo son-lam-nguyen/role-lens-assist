@@ -11,8 +11,9 @@ import { ConfidenceMeter } from "@/components/supportlens/ConfidenceMeter";
 import { Transcript, processAudioMock } from "@/lib/mock/mockTranscripts";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FileText, Send } from "lucide-react";
+import { FileText, Send, AlertCircle } from "lucide-react";
 import { recordingsStore } from "@/lib/recordings/store";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Upload = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
+  const [webhookResponse, setWebhookResponse] = useState<any>(null);
   const [piiMasked, setPiiMasked] = useState(true);
   const [recordingDuration, setRecordingDuration] = useState<number | undefined>(undefined);
 
@@ -92,11 +94,17 @@ const Upload = () => {
       }
 
       const webhookResult = await response.json();
+      console.log('Webhook response:', webhookResult);
       
-      const result = await processAudioMock(file);
+      // Store webhook response for display
+      setWebhookResponse(webhookResult);
+      
+      // Try to parse transcript data from webhook response
+      const parsedTranscript = parseWebhookResponse(webhookResult);
+      
       setProgress(100);
-      setTranscript(result);
-      toast.success("Audio sent to webhook and processed successfully!");
+      setTranscript(parsedTranscript);
+      toast.success("Audio processed successfully!");
     } catch (error) {
       console.error('Webhook error:', error);
       toast.error("Failed to process audio");
@@ -106,9 +114,73 @@ const Upload = () => {
     }
   };
 
+  // Parse webhook response to extract transcript data
+  const parseWebhookResponse = (data: any): Transcript => {
+    // Extract transcript text (try common field names)
+    const transcriptText = data.transcript || data.text || data.transcription || 
+                          data.transcript_text || data.content || 
+                          JSON.stringify(data, null, 2);
+
+    // Extract summary/key points
+    const tldr = data.summary ? 
+                 (Array.isArray(data.summary) ? data.summary : [data.summary]) :
+                 data.key_points ? 
+                 (Array.isArray(data.key_points) ? data.key_points : [data.key_points]) :
+                 data.tldr ?
+                 (Array.isArray(data.tldr) ? data.tldr : [data.tldr]) :
+                 ['Processing complete'];
+
+    // Extract key phrases
+    const keyphrases = data.key_phrases ?
+                      (Array.isArray(data.key_phrases) ? data.key_phrases : [data.key_phrases]) :
+                      data.keyphrases ?
+                      (Array.isArray(data.keyphrases) ? data.keyphrases : [data.keyphrases]) :
+                      data.keywords ?
+                      (Array.isArray(data.keywords) ? data.keywords : [data.keywords]) :
+                      [];
+
+    // Extract confidence score
+    const confidence = data.confidence_score || data.confidence || 
+                      data.accuracy || 0.85;
+
+    // Extract risk flags
+    const rawFlags = data.risk_flags ?
+                    (Array.isArray(data.risk_flags) ? data.risk_flags : [data.risk_flags]) :
+                    data.flags ?
+                    (Array.isArray(data.flags) ? data.flags : [data.flags]) :
+                    data.risk_analysis ?
+                    (Array.isArray(data.risk_analysis) ? data.risk_analysis : [data.risk_analysis]) :
+                    [];
+
+    const flags = rawFlags.map((flag: any) => {
+      if (typeof flag === 'string') {
+        return flag;
+      }
+      return flag.type || flag.name || flag.description || String(flag);
+    });
+
+    // Extract duration
+    const durationSec = data.duration || data.duration_sec || data.length || 
+                       recordingDuration || 0;
+
+    return {
+      id: data.id || `transcript_${Date.now()}`,
+      title: data.title || data.name || selectedFile?.name.replace(/\.[^/.]+$/, "") || 'Audio Transcript',
+      durationSec,
+      createdAt: data.created_at || data.timestamp || new Date().toISOString(),
+      text: transcriptText,
+      tldr,
+      keyphrases,
+      confidence,
+      flags,
+      piiMasked: data.pii_masked !== undefined ? data.pii_masked : true
+    };
+  };
+
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setTranscript(null);
+    setWebhookResponse(null);
     setRecordingDuration(undefined);
   };
 
@@ -155,13 +227,22 @@ const Upload = () => {
         </CardContent>
       </Card>
 
+      {webhookResponse && (
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Raw webhook response data available in console for debugging
+          </AlertDescription>
+        </Alert>
+      )}
+
       {transcript && (
         <div className="grid gap-6 lg:grid-cols-3 fade-in">
           <Card className="lg:col-span-2 card-hover">
             <CardHeader>
               <CardTitle className="text-xl">Transcript</CardTitle>
               <CardDescription>
-                Automatically generated from audio with PII masking
+                {webhookResponse ? 'Auto-detected from webhook response' : 'Automatically generated from audio'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -175,41 +256,80 @@ const Upload = () => {
                 <CardTitle className="text-lg">Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Key Points</h4>
-                  <ul className="space-y-2">
-                    {transcript.tldr.map((point, idx) => (
-                      <li key={idx} className="text-sm text-muted-foreground flex gap-2">
-                        <span className="text-primary">•</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Key Phrases</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {transcript.keyphrases.map((phrase) => (
-                      <Badge key={phrase} variant="secondary">
-                        {phrase}
-                      </Badge>
-                    ))}
+                {transcript.tldr.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Key Points</h4>
+                    <ul className="space-y-2">
+                      {transcript.tldr.map((point, idx) => (
+                        <li key={idx} className="text-sm text-muted-foreground flex gap-2">
+                          <span className="text-primary">•</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
+                )}
 
-                <ConfidenceMeter confidence={transcript.confidence} />
+                {transcript.keyphrases.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Key Phrases</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {transcript.keyphrases.map((phrase, idx) => (
+                        <Badge key={`${phrase}-${idx}`} variant="secondary">
+                          {phrase}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {transcript.confidence > 0 && (
+                  <ConfidenceMeter confidence={transcript.confidence} />
+                )}
               </CardContent>
             </Card>
 
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="text-lg">Risk Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RiskFlags flags={transcript.flags} />
-              </CardContent>
-            </Card>
+            {transcript.flags.length > 0 && (
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="text-lg">Risk Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RiskFlags flags={transcript.flags} />
+                </CardContent>
+              </Card>
+            )}
+
+            {webhookResponse && (
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="text-lg">Additional Data</CardTitle>
+                  <CardDescription>Other fields from webhook response</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    {Object.entries(webhookResponse).map(([key, value]) => {
+                      // Skip already displayed fields
+                      if (['transcript', 'text', 'transcription', 'transcript_text', 'content',
+                           'summary', 'key_points', 'tldr', 'key_phrases', 'keyphrases', 'keywords',
+                           'confidence_score', 'confidence', 'accuracy',
+                           'risk_flags', 'flags', 'risk_analysis'].includes(key)) {
+                        return null;
+                      }
+                      
+                      return (
+                        <div key={key} className="border-b pb-2">
+                          <span className="font-medium">{key}: </span>
+                          <span className="text-muted-foreground">
+                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="card-hover">
               <CardHeader>
