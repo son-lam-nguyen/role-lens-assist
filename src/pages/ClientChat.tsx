@@ -38,6 +38,7 @@ const ClientChat = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const sessionIdRef = useRef<string>("");
+  const previousMessageCountRef = useRef(0);
 
   // Initialize or retrieve session ID
   useEffect(() => {
@@ -50,7 +51,23 @@ const ClientChat = () => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Only auto-scroll if a new message arrived AND user is at bottom
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    previousMessageCountRef.current = messages.length;
+
+    if (!hasNewMessage) return;
+
+    const scrollArea = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollArea) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    const isAtBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 100;
+    
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   useEffect(() => {

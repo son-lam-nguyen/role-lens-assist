@@ -28,6 +28,8 @@ const Messages = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(0);
 
   useEffect(() => {
     loadConversations();
@@ -37,7 +39,23 @@ const Messages = () => {
   }, [workerSessionId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Only auto-scroll if a new message arrived AND user is at bottom
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    previousMessageCountRef.current = messages.length;
+
+    if (!hasNewMessage) return;
+
+    const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!scrollArea) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    const isAtBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 100;
+    
+    if (isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -291,7 +309,7 @@ const Messages = () => {
           <CardContent className="flex-1 flex flex-col gap-4">
             {selectedConversation ? (
               <>
-                <ScrollArea className="flex-1 pr-4 min-h-[400px]">
+                <ScrollArea ref={scrollAreaRef} className="flex-1 pr-4 min-h-[400px]">
                   <div className="space-y-4">
                     {messages.map((message) => (
                       <div
