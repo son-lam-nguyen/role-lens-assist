@@ -8,8 +8,9 @@ import { Mic, Square, Pause, Play, Download } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
-import { blobToWav, decodeToPCM, pcmToWav } from "@/lib/audio/wav";
+import { blobToWav, pcmToWav } from "@/lib/audio/wav";
 import { getPreferredEngine, createPcmCapture, type Engine, type PCMCapture } from "@/lib/audio/recorderEngine";
+import { preferredAudioMime, getExtensionForMime } from "@/lib/audio/mimeDetection";
 
 interface RecorderModalProps {
   open: boolean;
@@ -22,13 +23,13 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState("");
-  const [exportFormat, setExportFormat] = useState<'wav' | 'mp3' | 'ogg'>('wav');
+  const [exportFormat, setExportFormat] = useState<'m4a' | 'wav' | 'original'>('m4a');
   const [isConverting, setIsConverting] = useState(false);
+  const [recordedMimeType, setRecordedMimeType] = useState<string>('');
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
-  const mp3WorkerRef = useRef<Worker | null>(null);
   const navigate = useNavigate();
 
   const engineRef = useRef<Engine>('mediarecorder-opus');
@@ -37,9 +38,6 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const capturedSampleRateRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Initialize MP3 worker
-    mp3WorkerRef.current = new Worker(new URL('@/workers/mp3.worker.ts', import.meta.url), { type: 'module' });
-
     // Detect preferred capture engine for faster exports
     getPreferredEngine().then((engine) => {
       engineRef.current = engine;
@@ -49,7 +47,6 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (mp3WorkerRef.current) mp3WorkerRef.current.terminate();
       pcmCaptureRef.current?.dispose();
     };
   }, []);
@@ -57,7 +54,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      const mimeType = preferredAudioMime();
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      setRecordedMimeType(mimeType);
       
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -69,7 +68,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' });
         setRecordedBlob(blob);
         stream.getTracks().forEach(track => track.stop());
       };
@@ -194,57 +193,30 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
           downloadBlob(wavBlob, `${filename}.wav`);
           toast.success("Recording downloaded as WAV");
         }
-      } else if (exportFormat === 'mp3') {
-        toast.loading("Converting to MP3...");
-        if (capturedPCMRef.current && capturedSampleRateRef.current) {
-          const mp3Blob = await encodeMp3InWorker(capturedPCMRef.current, capturedSampleRateRef.current);
-          downloadBlob(mp3Blob, `${filename}.mp3`);
+      } else if (exportFormat === 'm4a') {
+        // M4A - native recording (if supported) or original
+        const ext = getExtensionForMime(recordedMimeType);
+        if (ext === '.m4a') {
+          downloadBlob(recordedBlob, `${filename}.m4a`);
+          toast.success("Recording downloaded as M4A");
         } else {
-          const { pcm, sampleRate } = await decodeToPCM(recordedBlob);
-          const mp3Blob = await encodeMp3InWorker(pcm, sampleRate);
-          downloadBlob(mp3Blob, `${filename}.mp3`);
+          // Fallback to original format
+          downloadBlob(recordedBlob, `${filename}${ext}`);
+          toast.success("Recording downloaded");
         }
-        toast.dismiss();
-        toast.success("Recording downloaded as MP3");
       } else {
-        // OGG/Opus - original format
-        downloadBlob(recordedBlob, `${filename}.ogg`);
-        toast.success("Recording downloaded as OGG");
+        // Original format
+        const ext = getExtensionForMime(recordedMimeType);
+        downloadBlob(recordedBlob, `${filename}${ext}`);
+        toast.success("Recording downloaded");
       }
     } catch (error) {
-      console.error('Conversion failed:', error);
+      console.error('Download failed:', error);
       toast.dismiss();
-      toast.error("Failed to convert recording. Downloading as WebM instead.");
-      downloadBlob(recordedBlob, `${filename}.webm`);
+      toast.error("Failed to download recording.");
     } finally {
       setIsConverting(false);
     }
-  };
-
-  const encodeMp3InWorker = (pcm: Float32Array, sampleRate: number): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-      if (!mp3WorkerRef.current) {
-        reject(new Error('MP3 worker not initialized'));
-        return;
-      }
-
-      const worker = mp3WorkerRef.current;
-
-      worker.onmessage = (e: MessageEvent) => {
-        if (e.data.success) {
-          const blob = new Blob([e.data.data], { type: 'audio/mpeg' });
-          resolve(blob);
-        } else {
-          reject(new Error(e.data.error));
-        }
-      };
-
-      worker.onerror = (error) => {
-        reject(error);
-      };
-
-      worker.postMessage({ pcm, sampleRate }, [pcm.buffer]);
-    });
   };
 
   const downloadBlob = (blob: Blob, filename: string) => {
@@ -333,7 +305,13 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
 
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Export Format</Label>
-                  <RadioGroup value={exportFormat} onValueChange={(v) => setExportFormat(v as 'wav' | 'mp3' | 'ogg')}>
+                  <RadioGroup value={exportFormat} onValueChange={(v) => setExportFormat(v as 'm4a' | 'wav' | 'original')}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="m4a" id="m4a" />
+                      <Label htmlFor="m4a" className="font-normal cursor-pointer">
+                        M4A (native, best quality)
+                      </Label>
+                    </div>
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="wav" id="wav" />
                       <Label htmlFor="wav" className="font-normal cursor-pointer">
@@ -341,20 +319,14 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="mp3" id="mp3" />
-                      <Label htmlFor="mp3" className="font-normal cursor-pointer">
-                        MP3 (smaller, slower)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="ogg" id="ogg" />
-                      <Label htmlFor="ogg" className="font-normal cursor-pointer">
-                        OGG (original)
+                      <RadioGroupItem value="original" id="original" />
+                      <Label htmlFor="original" className="font-normal cursor-pointer">
+                        Original (as recorded)
                       </Label>
                     </div>
                   </RadioGroup>
                   <p className="text-xs text-muted-foreground">
-                    WAV saves instantly; MP3 may take a few seconds.
+                    M4A and WAV are fast; no conversion delay.
                   </p>
                 </div>
 
@@ -374,7 +346,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                     disabled={isConverting}
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    {isConverting ? "Converting..." : `Download ${exportFormat.toUpperCase()}`}
+                    {isConverting ? "Converting..." : "Download"}
                   </Button>
                 </div>
 
