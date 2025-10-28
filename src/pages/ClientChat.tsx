@@ -276,7 +276,7 @@ const ClientChat = () => {
           )}
 
           <div className="grid gap-6 lg:grid-cols-4">
-            <Card className="lg:col-span-3 flex flex-col h-[calc(100vh-300px)] card-hover">
+            <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] card-hover">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
