@@ -23,36 +23,37 @@ const Upload = () => {
   const [transcript, setTranscript] = useState<Transcript | null>(null);
   const [piiMasked, setPiiMasked] = useState(true);
 
-  // Handle importing recording from the recordings page
+  // Handle importing recording from the recordings page or recorder modal
   useEffect(() => {
     const from = searchParams.get('from');
     const recordingId = searchParams.get('id');
     
-    if (from === 'recordings' && recordingId) {
+    if ((from === 'recordings' || from === 'recorder') && recordingId) {
       const recording = recordingsStore.get(recordingId);
       if (recording) {
         // Convert blob to File object
         const file = new File([recording.blob], recording.name, { type: recording.blob.type });
         setSelectedFile(file);
-        toast.success(`Loaded recording: ${recording.name}`);
+        
+        // Auto-process if coming from recorder
+        if (from === 'recorder') {
+          // Use setTimeout to ensure state is updated before processing
+          setTimeout(() => {
+            handleProcessRecording(file);
+          }, 100);
+        } else {
+          toast.success(`Loaded recording: ${recording.name}`);
+        }
       } else {
         toast.error("Recording not found");
       }
     }
   }, [searchParams]);
 
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    setTranscript(null);
-  };
-
-  const handleProcess = async () => {
-    if (!selectedFile) return;
-
+  const handleProcessRecording = async (file: File) => {
     setIsProcessing(true);
     setProgress(0);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 90) {
@@ -64,11 +65,10 @@ const Upload = () => {
     }, 200);
 
     try {
-      // Send audio to n8n webhook
       const formData = new FormData();
-      formData.append('data', selectedFile);
-      formData.append('filename', selectedFile.name);
-      formData.append('filesize', selectedFile.size.toString());
+      formData.append('data', file);
+      formData.append('filename', file.name);
+      formData.append('filesize', file.size.toString());
 
       const response = await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
         method: 'POST',
@@ -81,8 +81,7 @@ const Upload = () => {
 
       const webhookResult = await response.json();
       
-      // Use mock data for display (replace with webhook response structure when available)
-      const result = await processAudioMock(selectedFile);
+      const result = await processAudioMock(file);
       setProgress(100);
       setTranscript(result);
       toast.success("Audio sent to webhook and processed successfully!");
@@ -93,6 +92,16 @@ const Upload = () => {
       setIsProcessing(false);
       clearInterval(progressInterval);
     }
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    setTranscript(null);
+  };
+
+  const handleProcess = async () => {
+    if (!selectedFile) return;
+    await handleProcessRecording(selectedFile);
   };
 
   const handleSendToCases = () => {

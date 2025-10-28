@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Mic, Square, Pause, Play, Download } from "lucide-react";
+import { Mic, Square, Pause, Play, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
@@ -163,13 +163,34 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       action: {
         label: "Use in Upload & Analyze",
         onClick: () => {
-          navigate(`/sw/upload?recordingId=${recording.id}`);
+          navigate(`/sw/upload?from=recordings&id=${recording.id}`);
           onOpenChange(false);
         }
       }
     });
 
     resetRecorder();
+  };
+
+  const handleAnalyze = () => {
+    if (!recordedBlob) {
+      toast.error("No recording available");
+      return;
+    }
+
+    const name = recordingName.trim() || `Recording ${new Date().toLocaleString()}`;
+    const url = URL.createObjectURL(recordedBlob);
+    
+    const recording = recordingsStore.add({
+      name,
+      blob: recordedBlob,
+      duration: recordingTime,
+      url,
+    });
+
+    toast.success(`Loaded recording: ${name} — analyzing…`);
+    navigate(`/sw/upload?from=recorder&id=${recording.id}`);
+    onOpenChange(false);
   };
 
   const downloadRecording = async () => {
@@ -350,14 +371,25 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                   </Button>
                 </div>
 
-                <Button
-                  onClick={resetRecorder}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                >
-                  Record Again
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleAnalyze}
+                    size="lg"
+                    className="flex-1"
+                    disabled={isConverting}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Analyze
+                  </Button>
+                  <Button
+                    onClick={resetRecorder}
+                    variant="ghost"
+                    size="lg"
+                    className="flex-1"
+                  >
+                    Record Again
+                  </Button>
+                </div>
               </div>
             )}
           </div>
