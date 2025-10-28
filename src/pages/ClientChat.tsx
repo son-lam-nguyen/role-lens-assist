@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Navbar } from "@/components/supportlens/Navbar";
 import { CrisisBanner } from "@/components/supportlens/CrisisBanner";
 import { ChatMessage, generateChatbotResponse, quickReplies, detectCrisis } from "@/lib/mock/mockChatbot";
@@ -12,7 +13,7 @@ import { mockPsychoedSnippets } from "@/lib/mock/mockPsychoed";
 import { crisisContactsAU } from "@/lib/mock/mockSettings";
 import { conversationStore, messageStore, Message } from "@/lib/messages/store";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Bot, User, Library, Phone, Mic, Square, MessageSquare } from "lucide-react";
+import { Send, Bot, User, Library, Phone, Mic, Square, MessageSquare, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ClientChat = () => {
@@ -193,6 +194,48 @@ const ClientChat = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCloseHumanSupport = async () => {
+    if (!conversationId) return;
+
+    try {
+      // Close the conversation in database
+      const { error } = await supabase
+        .from('conversations')
+        .update({ status: 'closed' })
+        .eq('id', conversationId);
+
+      if (error) throw error;
+
+      // Clear guest conversation data
+      localStorage.removeItem('guest_conversation');
+
+      // Post system message
+      const systemMessage: ChatMessage = {
+        id: `system_${Date.now()}`,
+        role: "assistant",
+        content: "You have ended the support worker chat. You're now back with the AI assistant. How can I help you?",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+
+      // Switch back to AI mode
+      setHumanSupportMode(false);
+      setConversationId(null);
+
+      toast({
+        title: "Chat Ended",
+        description: "You're now back with the AI assistant"
+      });
+    } catch (error) {
+      console.error("Failed to close conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to close chat. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -467,27 +510,53 @@ const ClientChat = () => {
           <div className="grid gap-6 lg:grid-cols-4">
             <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] card-hover">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      {humanSupportMode ? <MessageSquare className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        {humanSupportMode ? <MessageSquare className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">
+                          {humanSupportMode ? "Support Worker Chat" : "Mental Health Support Chat"}
+                        </CardTitle>
+                        <CardDescription>
+                          {humanSupportMode ? "Connected with human support" : "Ask questions, learn coping strategies, and access resources"}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-xl">
-                        {humanSupportMode ? "Support Worker Chat" : "Mental Health Support Chat"}
-                      </CardTitle>
-                      <CardDescription>
-                        {humanSupportMode ? "Connected with human support" : "Ask questions, learn coping strategies, and access resources"}
-                      </CardDescription>
+                    <div className="flex items-center gap-2">
+                      {!humanSupportMode && (
+                        <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading}>
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Talk to Support Worker
+                        </Button>
+                      )}
+                      {humanSupportMode && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <X className="w-4 h-4 mr-2" />
+                              Close Chat
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>End chat and return to AI assistant?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will close your conversation with the support worker. You can start a new conversation anytime.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleCloseHumanSupport}>
+                                End Chat
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </div>
-                  {!humanSupportMode && (
-                    <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading}>
-                      <MessageSquare className="w-4 h-4 mr-2" />
-                      Talk to Support Worker
-                    </Button>
-                  )}
-                </div>
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
