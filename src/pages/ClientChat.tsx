@@ -32,6 +32,17 @@ const ClientChat = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const sessionIdRef = useRef<string>("");
+
+  // Initialize or retrieve session ID
+  useEffect(() => {
+    let sessionId = localStorage.getItem("client_chat_session_id");
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      localStorage.setItem("client_chat_session_id", sessionId);
+    }
+    sessionIdRef.current = sessionId;
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -65,6 +76,7 @@ const ClientChat = () => {
       formData.append("text", messageText);
       formData.append("type", "text");
       formData.append("timestamp", new Date().toISOString());
+      formData.append("session_id", sessionIdRef.current);
 
       const webhookResponse = await fetch(
         "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
@@ -162,6 +174,7 @@ const ClientChat = () => {
       formData.append("filesize", audioBlob.size.toString());
       formData.append("type", "audio");
       formData.append("timestamp", new Date().toISOString());
+      formData.append("session_id", sessionIdRef.current);
 
       const response = await fetch(
         "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
