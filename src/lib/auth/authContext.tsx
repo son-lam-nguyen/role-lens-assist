@@ -46,33 +46,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleSupabaseAuth = async (username: string) => {
-    // For demo purposes, use a valid email domain that Supabase accepts
-    const email = `${username}@supportlens.app`;
-    const password = "DemoPassword2024!"; // Demo password
+    // For demo purposes, use a valid email domain
+    const email = `${username}@example.com`;
+    const password = "DemoPassword2024!";
+    
+    console.log("🔐 Attempting Supabase auth for:", email);
     
     try {
       // Try to sign in first
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      if (signInData?.session) {
+        console.log("✅ Signed in successfully");
+        return;
+      }
+
       // If sign in fails, try to sign up
       if (signInError) {
-        const { error: signUpError } = await supabase.auth.signUp({
+        console.log("⚠️ Sign in failed, attempting signup:", signInError.message);
+        
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/sw`,
+            data: {
+              username: username,
+            }
           }
         });
         
         if (signUpError) {
-          console.error("Supabase auth error:", signUpError);
+          console.error("❌ Supabase signup error:", signUpError);
+          return;
+        }
+
+        if (signUpData?.session) {
+          console.log("✅ Signed up and auto-confirmed successfully");
+        } else if (signUpData?.user && !signUpData?.session) {
+          console.warn("⚠️ User created but needs email confirmation. Session not available yet.");
+          console.log("💡 To fix: Disable 'Confirm email' in Supabase Dashboard > Authentication > Providers > Email");
         }
       }
     } catch (error) {
-      console.error("Error with Supabase authentication:", error);
+      console.error("❌ Supabase authentication error:", error);
     }
   };
 

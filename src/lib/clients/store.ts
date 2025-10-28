@@ -71,11 +71,23 @@ class ClientStore {
   }
 
   async add(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>): Promise<Client | null> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    console.log("🔍 Checking Supabase auth status...");
+    console.log("User:", user);
+    console.log("Error:", userError);
+    
     if (!user) {
-      console.error('User not authenticated');
+      console.error('❌ User not authenticated with Supabase');
+      
+      // Check if session exists
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Session status:", session ? "exists" : "none");
+      
       return null;
     }
+    
+    console.log("✅ User authenticated:", user.email);
 
     const { data, error } = await supabase
       .from('clients')
