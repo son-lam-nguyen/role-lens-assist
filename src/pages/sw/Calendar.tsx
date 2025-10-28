@@ -1,96 +1,241 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Calendar as CalendarIcon } from "lucide-react";
-import { format, startOfWeek, addDays } from "date-fns";
+import { AlertCircle, Calendar as CalendarIcon, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, startOfWeek, addDays, addWeeks, startOfToday } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "@/hooks/use-toast";
+import { calendarStore, CalendarEvent, CaseRisk } from "@/lib/calendar/store";
 
-interface CaseReminder {
-  id: string;
-  clientName: string;
-  caseType: "routine" | "moderate" | "high-risk";
-  followUpDate: Date;
+interface FormData {
+  client: string;
+  title: string;
+  risk: CaseRisk;
+  date: string;
+  startTime: string;
+  endTime: string;
   notes: string;
 }
 
-// Mock data for demonstration
-const mockReminders: CaseReminder[] = [
-  {
-    id: "1",
-    clientName: "John D.",
-    caseType: "high-risk",
-    followUpDate: new Date(2025, 9, 28),
-    notes: "Crisis intervention follow-up"
-  },
-  {
-    id: "2",
-    clientName: "Sarah M.",
-    caseType: "routine",
-    followUpDate: new Date(2025, 9, 29),
-    notes: "Regular check-in"
-  },
-  {
-    id: "3",
-    clientName: "Mike L.",
-    caseType: "high-risk",
-    followUpDate: new Date(2025, 9, 30),
-    notes: "Safety plan review"
-  },
-  {
-    id: "4",
-    clientName: "Emma T.",
-    caseType: "moderate",
-    followUpDate: new Date(2025, 9, 31),
-    notes: "Progress assessment"
-  },
-  {
-    id: "5",
-    clientName: "David K.",
-    caseType: "high-risk",
-    followUpDate: new Date(2025, 10, 1),
-    notes: "Mental health assessment"
-  },
-  {
-    id: "6",
-    clientName: "Lisa R.",
-    caseType: "high-risk",
-    followUpDate: new Date(2025, 10, 2),
-    notes: "Emergency housing follow-up"
-  }
-];
-
 const Calendar = () => {
-  const [currentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    client: "",
+    title: "",
+    risk: "low",
+    date: "",
+    startTime: "09:00",
+    endTime: "10:00",
+    notes: "",
+  });
+
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
-  // Count high-risk cases this week
-  const highRiskCount = mockReminders.filter(r => r.caseType === "high-risk").length;
+  useEffect(() => {
+    loadEvents();
+  }, [currentWeekStart]);
+
+  const loadEvents = () => {
+    const weekEvents = calendarStore.listByWeek(currentWeekStart);
+    setEvents(weekEvents);
+  };
+
+  const highRiskCount = events.filter(e => e.risk === "high").length;
   const exceedsLimit = highRiskCount > 3;
 
-  const getCasesByDay = (day: Date) => {
-    return mockReminders.filter(reminder => 
-      format(reminder.followUpDate, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+  const getEventsByDay = (day: Date) => {
+    return events.filter(event => 
+      format(new Date(event.startISO), "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
     );
   };
 
-  const getCaseTypeColor = (type: CaseReminder["caseType"]) => {
-    switch (type) {
-      case "high-risk":
+  const getRiskColor = (risk: CaseRisk) => {
+    switch (risk) {
+      case "high":
         return "destructive";
       case "moderate":
         return "default";
-      case "routine":
+      case "low":
         return "secondary";
     }
   };
 
+  const handleDayClick = (day: Date) => {
+    setSelectedDay(day);
+    setEditingEvent(null);
+    setFormData({
+      client: "",
+      title: "",
+      risk: "low",
+      date: format(day, "yyyy-MM-dd"),
+      startTime: "09:00",
+      endTime: "10:00",
+      notes: "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setEditingEvent(event);
+    const startDate = new Date(event.startISO);
+    const endDate = new Date(event.endISO);
+    setFormData({
+      client: event.client,
+      title: event.title,
+      risk: event.risk,
+      date: format(startDate, "yyyy-MM-dd"),
+      startTime: format(startDate, "HH:mm"),
+      endTime: format(endDate, "HH:mm"),
+      notes: event.notes || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    // Validate fields
+    if (!formData.client.trim() || !formData.title.trim() || !formData.date) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const startISO = `${formData.date}T${formData.startTime}:00`;
+    const endISO = `${formData.date}T${formData.endTime}:00`;
+    const weekStart = startOfWeek(new Date(formData.date), { weekStartsOn: 1 });
+
+    // Check heavy case limit
+    if (formData.risk === "high") {
+      const currentHeavyCount = calendarStore.countHeavy(weekStart);
+      const isEditingSameWeek = editingEvent && 
+        startOfWeek(new Date(editingEvent.startISO), { weekStartsOn: 1 }).getTime() === weekStart.getTime();
+      const wasHeavy = editingEvent?.risk === "high";
+
+      if (currentHeavyCount >= 3 && (!isEditingSameWeek || !wasHeavy)) {
+        toast({
+          title: "Limit Reached",
+          description: "Maximum of 3 high-risk cases per week. Please choose a different week or lower the risk level.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (editingEvent) {
+      calendarStore.update(editingEvent.id, {
+        client: formData.client,
+        title: formData.title,
+        risk: formData.risk,
+        startISO,
+        endISO,
+        notes: formData.notes,
+      });
+      toast({
+        title: "Event Updated",
+        description: "Follow-up has been updated successfully.",
+      });
+    } else {
+      calendarStore.add({
+        client: formData.client,
+        title: formData.title,
+        risk: formData.risk,
+        startISO,
+        endISO,
+        notes: formData.notes,
+      });
+      toast({
+        title: "Event Added",
+        description: "Follow-up has been scheduled successfully.",
+      });
+    }
+
+    setDialogOpen(false);
+    loadEvents();
+  };
+
+  const handleDelete = () => {
+    if (!eventToDelete) return;
+    
+    calendarStore.remove(eventToDelete);
+    toast({
+      title: "Event Removed",
+      description: "Follow-up has been deleted.",
+    });
+    
+    setDeleteDialogOpen(false);
+    setDialogOpen(false);
+    setEventToDelete(null);
+    loadEvents();
+  };
+
+  const confirmDelete = (eventId: string) => {
+    setEventToDelete(eventId);
+    setDeleteDialogOpen(true);
+  };
+
+  const goToToday = () => {
+    setCurrentWeekStart(startOfWeek(startOfToday(), { weekStartsOn: 1 }));
+  };
+
+  const previousWeek = () => {
+    setCurrentWeekStart(prev => addWeeks(prev, -1));
+  };
+
+  const nextWeek = () => {
+    setCurrentWeekStart(prev => addWeeks(prev, 1));
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Weekly Calendar</h1>
-        <p className="text-muted-foreground mt-2">
-          Case follow-up reminders and schedule overview
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Weekly Calendar</h1>
+          <p className="text-muted-foreground mt-2">
+            Case follow-up reminders and schedule overview
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={previousWeek}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToToday}>
+            Today
+          </Button>
+          <Button variant="outline" size="sm" onClick={nextWeek}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {exceedsLimit && (
@@ -116,7 +261,7 @@ const Calendar = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             {weekDays.map((day) => {
-              const cases = getCasesByDay(day);
+              const dayEvents = getEventsByDay(day);
               const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
               
               return (
@@ -125,35 +270,67 @@ const Calendar = () => {
                   className={isToday ? "border-primary" : ""}
                 >
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold">
-                      {format(day, "EEE")}
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {format(day, "MMM dd")}
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-sm font-semibold">
+                          {format(day, "EEE")}
+                        </CardTitle>
+                        <CardDescription className="text-xs">
+                          {format(day, "MMM dd")}
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => handleDayClick(day)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    {cases.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No cases</p>
+                    {dayEvents.length === 0 ? (
+                      <button
+                        onClick={() => handleDayClick(day)}
+                        className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                      >
+                        Click to add
+                      </button>
                     ) : (
-                      cases.map((reminder) => (
+                      dayEvents.map((event) => (
                         <div 
-                          key={reminder.id}
-                          className="p-2 rounded-lg bg-muted/50 space-y-1"
+                          key={event.id}
+                          className="group p-2 rounded-lg bg-muted/50 space-y-1 cursor-pointer hover:bg-muted transition-colors relative"
+                          onClick={() => handleEventClick(event)}
                         >
                           <div className="flex items-center justify-between gap-1">
                             <p className="text-xs font-medium truncate">
-                              {reminder.clientName}
+                              {event.client}
                             </p>
-                            <Badge 
-                              variant={getCaseTypeColor(reminder.caseType)}
-                              className="text-[10px] px-1 py-0"
-                            >
-                              {reminder.caseType}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              <Badge 
+                                variant={getRiskColor(event.risk)}
+                                className="text-[10px] px-1 py-0"
+                              >
+                                {event.risk}
+                              </Badge>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  confirmDelete(event.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-[10px] text-muted-foreground line-clamp-2">
-                            {reminder.notes}
+                          <p className="text-[10px] font-medium text-muted-foreground">
+                            {event.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {format(new Date(event.startISO), "HH:mm")} - {format(new Date(event.endISO), "HH:mm")}
                           </p>
                         </div>
                       ))
@@ -174,23 +351,148 @@ const Calendar = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-destructive/10">
               <p className="text-sm font-medium text-destructive">High-Risk Cases</p>
-              <p className="text-2xl font-bold mt-1">{highRiskCount}</p>
+              <p className="text-2xl font-bold mt-1">{highRiskCount}/3</p>
             </div>
             <div className="p-4 rounded-lg bg-muted">
               <p className="text-sm font-medium">Moderate Cases</p>
               <p className="text-2xl font-bold mt-1">
-                {mockReminders.filter(r => r.caseType === "moderate").length}
+                {events.filter(e => e.risk === "moderate").length}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-muted">
-              <p className="text-sm font-medium">Routine Cases</p>
+              <p className="text-sm font-medium">Low-Risk Cases</p>
               <p className="text-2xl font-bold mt-1">
-                {mockReminders.filter(r => r.caseType === "routine").length}
+                {events.filter(e => e.risk === "low").length}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md" onEscapeKeyDown={() => setDialogOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>
+              {editingEvent ? "Edit Follow-Up" : "Schedule Follow-Up"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingEvent ? "Update the follow-up details below." : "Add a new case follow-up to your calendar."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="client">Client Name *</Label>
+              <Input
+                id="client"
+                value={formData.client}
+                onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                placeholder="e.g., John D."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">Case Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="e.g., Crisis intervention follow-up"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Risk Level *</Label>
+              <RadioGroup value={formData.risk} onValueChange={(value) => setFormData({ ...formData, risk: value as CaseRisk })}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="low" id="low" />
+                  <Label htmlFor="low" className="font-normal cursor-pointer">Low</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="moderate" id="moderate" />
+                  <Label htmlFor="moderate" className="font-normal cursor-pointer">Moderate</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="high" id="high" />
+                  <Label htmlFor="high" className="font-normal cursor-pointer">High</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date">Date *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time *</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time *</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Additional details..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex justify-between">
+            {editingEvent && (
+              <Button
+                variant="destructive"
+                onClick={() => confirmDelete(editingEvent.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>
+                {editingEvent ? "Update" : "Schedule"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Follow-Up</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this follow-up? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
