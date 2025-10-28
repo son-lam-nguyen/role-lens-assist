@@ -6,13 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { conversationStore, messageStore, Conversation, Message } from "@/lib/messages/store";
+import { Conversation, Message } from "@/lib/messages/store";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Send, Clock, CheckCircle2, User } from "lucide-react";
 
 const Messages = () => {
   const { toast } = useToast();
-  const [userId, setUserId] = useState<string | null>(null);
+  const [workerSessionId] = useState(() => {
+    // Create or retrieve worker session ID
+    let sessionId = localStorage.getItem('worker_session_id');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('worker_session_id', sessionId);
+    }
+    return sessionId;
+  });
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [waitingConversations, setWaitingConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -22,21 +30,11 @@ const Messages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    getUser();
-  }, []);
-
-  useEffect(() => {
-    if (userId) {
-      loadConversations();
-      loadWaitingConversations();
-    }
-  }, [userId]);
+    loadConversations();
+    // Poll for new conversations every 5 seconds
+    const interval = setInterval(loadConversations, 5000);
+    return () => clearInterval(interval);
+  }, [workerSessionId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,116 +43,130 @@ const Messages = () => {
   useEffect(() => {
     if (selectedConversation) {
       loadMessages(selectedConversation.id);
-      
-      const channel = messageStore.subscribeToMessages(selectedConversation.id, (newMessage) => {
-        setMessages(prev => [...prev, newMessage]);
-      });
-
-      return () => {
-        channel.unsubscribe();
-      };
+      // Poll for new messages every 3 seconds
+      const interval = setInterval(() => loadMessages(selectedConversation.id), 3000);
+      return () => clearInterval(interval);
     }
   }, [selectedConversation]);
 
   const loadConversations = async () => {
-    if (!userId) return;
-    const { data, error } = await conversationStore.getWorkerConversations(userId);
-    if (error) {
-      toast({
-        title: "Error loading conversations",
-        description: error.message,
-        variant: "destructive"
+    try {
+      const { data, error } = await supabase.functions.invoke('get-worker-conversations', {
+        body: { worker_session_id: workerSessionId }
       });
-    } else if (data) {
-      setConversations(data);
-    }
-  };
 
-  const loadWaitingConversations = async () => {
-    const { data, error } = await conversationStore.getWaitingConversations();
-    if (error) {
-      toast({
-        title: "Error loading waiting conversations",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else if (data) {
-      setWaitingConversations(data);
+      if (error) throw error;
+      
+      if (data) {
+        setWaitingConversations(data.waiting || []);
+        setConversations(data.active || []);
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
     }
   };
 
   const loadMessages = async (conversationId: string) => {
-    const { data, error } = await messageStore.getMessages(conversationId);
-    if (error) {
-      toast({
-        title: "Error loading messages",
-        description: error.message,
-        variant: "destructive"
+    try {
+      const { data, error } = await supabase.functions.invoke('get-conversation-messages', {
+        body: {
+          conversation_id: conversationId,
+          worker_session_id: workerSessionId
+        }
       });
-    } else if (data) {
-      setMessages(data);
+
+      if (error) throw error;
+      
+      if (data?.messages) {
+        setMessages(data.messages);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
     }
   };
 
   const handleClaimConversation = async (conversationId: string) => {
-    if (!userId) return;
-    const { data, error } = await conversationStore.claimConversation(conversationId, userId);
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke('claim-conversation', {
+        body: {
+          conversation_id: conversationId,
+          worker_session_id: workerSessionId
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.conversation) {
+        toast({
+          title: "Conversation claimed",
+          description: "You can now chat with the client"
+        });
+        loadConversations();
+        setSelectedConversation(data.conversation);
+      }
+    } catch (error) {
+      console.error('Error claiming conversation:', error);
       toast({
         title: "Error claiming conversation",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive"
       });
-    } else if (data) {
-      toast({
-        title: "Conversation claimed",
-        description: "You can now chat with the client"
-      });
-      loadConversations();
-      loadWaitingConversations();
-      setSelectedConversation(data);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!input.trim() || !selectedConversation || !userId || isLoading) return;
+    if (!input.trim() || !selectedConversation || isLoading) return;
 
     setIsLoading(true);
-    const { error } = await messageStore.sendMessage(
-      selectedConversation.id,
-      userId,
-      input.trim(),
-      'worker'
-    );
+    try {
+      const { error } = await supabase.functions.invoke('send-worker-message', {
+        body: {
+          conversation_id: selectedConversation.id,
+          worker_session_id: workerSessionId,
+          content: input.trim()
+        }
+      });
 
-    if (error) {
+      if (error) throw error;
+      
+      setInput("");
+      loadMessages(selectedConversation.id);
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         title: "Error sending message",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive"
       });
-    } else {
-      setInput("");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleCloseConversation = async () => {
     if (!selectedConversation) return;
-    const { error } = await conversationStore.closeConversation(selectedConversation.id);
-    if (error) {
-      toast({
-        title: "Error closing conversation",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
+    
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .update({ status: 'closed' })
+        .eq('id', selectedConversation.id);
+        
+      if (error) throw error;
+      
       toast({
         title: "Conversation closed",
         description: "The conversation has been marked as closed"
       });
       setSelectedConversation(null);
       loadConversations();
+    } catch (error) {
+      console.error('Error closing conversation:', error);
+      toast({
+        title: "Error closing conversation",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive"
+      });
     }
   };
 

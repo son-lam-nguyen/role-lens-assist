@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.get-guest-messages]
 verify_jwt = false
+
+[functions.get-worker-conversations]
+verify_jwt = false
+
+[functions.claim-conversation]
+verify_jwt = false
+
+[functions.send-worker-message]
+verify_jwt = false
+
+[functions.get-conversation-messages]
+verify_jwt = false
