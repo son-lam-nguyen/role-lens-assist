@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,16 +10,36 @@ import { RiskFlags } from "@/components/supportlens/RiskFlags";
 import { ConfidenceMeter } from "@/components/supportlens/ConfidenceMeter";
 import { Transcript, processAudioMock } from "@/lib/mock/mockTranscripts";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { FileText, Send } from "lucide-react";
+import { recordingsStore } from "@/lib/recordings/store";
 
 const Upload = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
   const [piiMasked, setPiiMasked] = useState(true);
+
+  // Handle importing recording from the recordings page
+  useEffect(() => {
+    const from = searchParams.get('from');
+    const recordingId = searchParams.get('id');
+    
+    if (from === 'recordings' && recordingId) {
+      const recording = recordingsStore.get(recordingId);
+      if (recording) {
+        // Convert blob to File object
+        const file = new File([recording.blob], recording.name, { type: recording.blob.type });
+        setSelectedFile(file);
+        toast.success(`Loaded recording: ${recording.name}`);
+      } else {
+        toast.error("Recording not found");
+      }
+    }
+  }, [searchParams]);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -107,6 +127,7 @@ const Upload = () => {
             onProcess={handleProcess}
             isProcessing={isProcessing}
             progress={progress}
+            initialFile={selectedFile}
           />
         </CardContent>
       </Card>

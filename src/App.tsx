@@ -13,6 +13,7 @@ import Upload from "./pages/sw/Upload";
 import Cases from "./pages/sw/Cases";
 import Notes from "./pages/sw/Notes";
 import Library from "./pages/sw/Library";
+import Recordings from "./pages/sw/Recordings";
 import Settings from "./pages/sw/Settings";
 import ClientChat from "./pages/ClientChat";
 import Admin from "./pages/Admin";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="cases" element={<Cases />} />
               <Route path="notes" element={<Notes />} />
               <Route path="library" element={<Library />} />
+              <Route path="recordings" element={<Recordings />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="/client" element={<ClientChat />} />

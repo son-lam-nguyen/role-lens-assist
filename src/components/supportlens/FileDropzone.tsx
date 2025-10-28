@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Upload, File, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -10,6 +10,7 @@ interface FileDropzoneProps {
   isProcessing: boolean;
   progress: number;
   accept?: string;
+  initialFile?: File | null;
 }
 
 export const FileDropzone = ({
@@ -17,9 +18,17 @@ export const FileDropzone = ({
   onProcess,
   isProcessing,
   progress,
-  accept = '.wav,.mp3,.m4a'
+  accept = '.wav,.mp3,.m4a',
+  initialFile = null
 }: FileDropzoneProps) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(initialFile);
+
+  // Update internal state when initialFile prop changes
+  useEffect(() => {
+    if (initialFile) {
+      setSelectedFile(initialFile);
+    }
+  }, [initialFile]);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {

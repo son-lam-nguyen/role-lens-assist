@@ -5,6 +5,7 @@ import {
   Search,
   NotebookPen,
   BookOpen,
+  AudioLines,
   Settings as SettingsIcon
 } from "lucide-react";
 import {
@@ -24,6 +25,7 @@ const navItems = [
   { title: "Similar Cases", url: "/sw/cases", icon: Search },
   { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen },
   { title: "Library", url: "/sw/library", icon: BookOpen },
+  { title: "Audio Recorded", url: "/sw/recordings", icon: AudioLines },
   { title: "Settings", url: "/sw/settings", icon: SettingsIcon },
 ];
 
