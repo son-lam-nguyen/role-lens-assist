@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Upload,
+  Users,
   Search,
   Calendar,
   NotebookPen,
@@ -23,6 +24,7 @@ import {
 const navItems = [
   { title: "Overview", url: "/sw", icon: LayoutDashboard },
   { title: "Upload & Analyze", url: "/sw/upload", icon: Upload },
+  { title: "Client List", url: "/sw/clients", icon: Users },
   { title: "Similar Cases", url: "/sw/cases", icon: Search },
   { title: "Calendar", url: "/sw/calendar", icon: Calendar },
   { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen },

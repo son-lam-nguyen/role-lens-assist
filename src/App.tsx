@@ -10,6 +10,7 @@ import Login from "./pages/auth/Login";
 import SWLayout from "./pages/sw/SWLayout";
 import Overview from "./pages/sw/Overview";
 import Upload from "./pages/sw/Upload";
+import Clients from "./pages/sw/Clients";
 import Cases from "./pages/sw/Cases";
 import Calendar from "./pages/sw/Calendar";
 import Notes from "./pages/sw/Notes";
@@ -42,6 +43,7 @@ const App = () => (
             >
               <Route index element={<Overview />} />
               <Route path="upload" element={<Upload />} />
+              <Route path="clients" element={<Clients />} />
               <Route path="cases" element={<Cases />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="notes" element={<Notes />} />
