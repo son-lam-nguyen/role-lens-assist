@@ -84,7 +84,7 @@ const Upload = () => {
       formData.append('filename', file.name);
       formData.append('filesize', file.size.toString());
 
-      const response = await fetch('https://n8n.birthdaymessaging.space/webhook-test/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
+      const response = await fetch('https://n8n.birthdaymessaging.space/webhook/f936540f-d473-4f4d-87d5-0bbcb3d05612', {
         method: 'POST',
         body: formData,
       });
