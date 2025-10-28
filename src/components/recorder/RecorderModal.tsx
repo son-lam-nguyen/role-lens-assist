@@ -10,7 +10,7 @@ import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
 import { blobToWav, pcmToWav } from "@/lib/audio/wav";
 import { getPreferredEngine, createPcmCapture, type Engine, type PCMCapture } from "@/lib/audio/recorderEngine";
-import { preferredAudioMime, getExtensionForMime } from "@/lib/audio/mimeDetection";
+import { preferredAudioMime, getExtensionForMime, supportsM4A, mapMimeToExt } from "@/lib/audio/mimeDetection";
 
 interface RecorderModalProps {
   open: boolean;
@@ -26,6 +26,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const [exportFormat, setExportFormat] = useState<'m4a' | 'wav' | 'original'>('m4a');
   const [isConverting, setIsConverting] = useState(false);
   const [recordedMimeType, setRecordedMimeType] = useState<string>('');
+  const [m4aSupported, setM4aSupported] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -44,6 +45,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     }).catch(() => {
       engineRef.current = 'mediarecorder-opus';
     });
+
+    // Check M4A support
+    setM4aSupported(supportsM4A());
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -146,30 +150,62 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     }
   };
 
-  const saveRecording = () => {
+  const saveRecording = async () => {
     if (!recordedBlob) return;
 
     const name = recordingName.trim() || `Recording ${new Date().toLocaleString()}`;
-    const url = URL.createObjectURL(recordedBlob);
-    
-    const recording = recordingsStore.add({
-      name,
-      blob: recordedBlob,
-      duration: recordingTime,
-      url,
-    });
 
-    toast.success("Recording saved!", {
-      action: {
-        label: "Use in Upload & Analyze",
-        onClick: () => {
-          navigate(`/sw/upload?from=recordings&id=${recording.id}`);
-          onOpenChange(false);
+    try {
+      setIsConverting(true);
+      let blobToSave = recordedBlob;
+      let mimeType = recordedMimeType;
+
+      // Convert based on export format
+      if (exportFormat === 'wav') {
+        if (capturedPCMRef.current && capturedSampleRateRef.current) {
+          blobToSave = pcmToWav(capturedPCMRef.current, capturedSampleRateRef.current, 1);
+        } else {
+          toast.loading("Converting to WAV...");
+          blobToSave = await blobToWav(recordedBlob);
+          toast.dismiss();
+        }
+        mimeType = 'audio/wav';
+      } else if (exportFormat === 'm4a') {
+        // Only use M4A if natively recorded as M4A
+        const ext = getExtensionForMime(recordedMimeType);
+        if (ext !== '.m4a') {
+          blobToSave = recordedBlob; // Fallback to original
+          mimeType = recordedMimeType;
         }
       }
-    });
+      // 'original' uses recordedBlob as-is
 
-    resetRecorder();
+      const url = URL.createObjectURL(blobToSave);
+      const recording = recordingsStore.add({
+        name,
+        blob: blobToSave,
+        duration: recordingTime,
+        url,
+      });
+
+      toast.success("Recording saved!", {
+        action: {
+          label: "Use in Upload & Analyze",
+          onClick: () => {
+            navigate(`/sw/upload?from=recordings&id=${recording.id}`);
+            onOpenChange(false);
+          }
+        }
+      });
+
+      resetRecorder();
+    } catch (error) {
+      console.error('Save failed:', error);
+      toast.dismiss();
+      toast.error("Failed to save recording.");
+    } finally {
+      setIsConverting(false);
+    }
   };
 
   const handleAnalyze = () => {
@@ -328,9 +364,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                   <Label className="text-sm font-medium">Export Format</Label>
                   <RadioGroup value={exportFormat} onValueChange={(v) => setExportFormat(v as 'm4a' | 'wav' | 'original')}>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="m4a" id="m4a" />
-                      <Label htmlFor="m4a" className="font-normal cursor-pointer">
-                        M4A (native, best quality)
+                      <RadioGroupItem value="m4a" id="m4a" disabled={!m4aSupported} />
+                      <Label htmlFor="m4a" className={`font-normal ${m4aSupported ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
+                        M4A (native, best quality) {!m4aSupported && '(not supported)'}
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -347,7 +383,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                     </div>
                   </RadioGroup>
                   <p className="text-xs text-muted-foreground">
-                    M4A and WAV are fast; no conversion delay.
+                    {m4aSupported ? 'M4A and WAV are fast; no conversion delay.' : 'WAV is fast; no conversion delay.'}
                   </p>
                 </div>
 
@@ -356,8 +392,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
                     onClick={saveRecording}
                     size="lg"
                     className="flex-1"
+                    disabled={isConverting}
                   >
-                    Save
+                    {isConverting ? "Saving..." : "Save"}
                   </Button>
                   <Button
                     onClick={downloadRecording}
