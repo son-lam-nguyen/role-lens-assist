@@ -58,6 +58,12 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
 
   const startRecording = async () => {
     try {
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error("Microphone access not supported in this browser");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
       // Choose mime based on export format
@@ -108,9 +114,35 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       }, 1000);
 
       toast.success("Recording started");
-    } catch (error) {
-      toast.error("Failed to access microphone");
-      console.error(error);
+    } catch (error: any) {
+      console.error('Microphone access error:', error);
+      
+      // Provide specific error messages based on error type
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error("Microphone access denied. Please allow microphone permissions in your browser settings.", {
+          duration: 5000,
+        });
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        toast.error("No microphone found. Please connect a microphone and try again.", {
+          duration: 5000,
+        });
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        toast.error("Microphone is already in use by another application.", {
+          duration: 5000,
+        });
+      } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
+        toast.error("Microphone doesn't meet required constraints.", {
+          duration: 5000,
+        });
+      } else if (error.name === 'SecurityError') {
+        toast.error("Microphone access blocked due to security settings.", {
+          duration: 5000,
+        });
+      } else {
+        toast.error(`Failed to access microphone: ${error.message || 'Unknown error'}`, {
+          duration: 5000,
+        });
+      }
     }
   };
 
