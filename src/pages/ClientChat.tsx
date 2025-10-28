@@ -166,6 +166,17 @@ const ClientChat = () => {
   };
 
   const sendAudioToWebhook = async (audioBlob: Blob) => {
+    setIsLoading(true);
+    
+    // Add a message to the chat showing audio was sent
+    const audioMessage: ChatMessage = {
+      id: `audio_${Date.now()}`,
+      role: "user",
+      content: "🎤 Audio message sent",
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, audioMessage]);
+
     try {
       const formData = new FormData();
       const filename = `client_audio_${Date.now()}.webm`;
@@ -184,30 +195,51 @@ const ClientChat = () => {
         },
       );
 
-      if (response.ok) {
-        toast({
-          title: "Audio sent",
-          description: "Your audio message has been sent successfully",
-        });
-
-        // Add a message to the chat showing audio was sent
-        const audioMessage: ChatMessage = {
-          id: `audio_${Date.now()}`,
-          role: "user",
-          content: "🎤 Audio message sent",
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, audioMessage]);
-      } else {
-        throw new Error("Failed to send audio");
+      if (!response.ok) {
+        throw new Error(`Webhook returned ${response.status}`);
       }
+
+      const responseData = await response.json();
+
+      // Extract the response text from webhook
+      const responseText =
+        responseData.output ||
+        responseData.response ||
+        responseData.message ||
+        responseData.text ||
+        "I received your audio message.";
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant_${Date.now()}`,
+        role: "assistant",
+        content: responseText,
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      toast({
+        title: "Response received",
+        description: "Audio processed successfully",
+      });
     } catch (error) {
       console.error("Failed to send audio to webhook:", error);
+      const errorMessage: ChatMessage = {
+        id: `error_${Date.now()}`,
+        role: "assistant",
+        content:
+          "I apologize, but I encountered an error processing your audio. Please try again or type your message instead.",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      
       toast({
         title: "Error",
-        description: "Failed to send audio message",
+        description: "Failed to process audio message",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
