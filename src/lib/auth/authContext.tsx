@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { mockUsers, MockUser } from "@/lib/mock/mockUsers";
 
 interface AuthUser {
@@ -21,18 +22,57 @@ const AUTH_STORAGE_KEY = "supportlens_auth";
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // Load auth state from localStorage on mount
+  // Load auth state from localStorage on mount and check Supabase session
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setUser(parsed);
-      } catch (e) {
-        localStorage.removeItem(AUTH_STORAGE_KEY);
+    const initAuth = async () => {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setUser(parsed);
+          
+          // Check if Supabase session exists
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) {
+            // Try to restore Supabase session
+            await handleSupabaseAuth(parsed.username);
+          }
+        } catch (e) {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+        }
       }
-    }
+    };
+    initAuth();
   }, []);
+
+  const handleSupabaseAuth = async (username: string) => {
+    // For demo purposes, we'll sign in with a consistent email pattern
+    // In production, you'd want proper user management
+    const email = `${username}@supportlens.demo`;
+    const password = "demo-password-123"; // In production, use secure passwords
+    
+    try {
+      // Try to sign in first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      // If sign in fails, try to sign up
+      if (signInError) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) {
+          console.error("Supabase auth error:", signUpError);
+        }
+      }
+    } catch (error) {
+      console.error("Error with Supabase authentication:", error);
+    }
+  };
 
   const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     // Simulate network delay
@@ -54,12 +94,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     setUser(authUser);
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
+    
+    // Also authenticate with Supabase
+    await handleSupabaseAuth(foundUser.username);
+    
     return { success: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    
+    // Also sign out from Supabase
+    await supabase.auth.signOut();
   };
 
   return (

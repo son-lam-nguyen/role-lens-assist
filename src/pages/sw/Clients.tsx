@@ -138,38 +138,67 @@ const Clients = () => {
       return;
     }
 
-    if (editingClient) {
-      await clientStore.update(editingClient.id, {
-        name: formData.name,
-        age,
-        gender: formData.gender,
-        contact: formData.contact,
-        notes: formData.notes,
-        riskLevel: formData.riskLevel,
-        assignedWorker: formData.assignedWorker,
-      });
+    try {
+      if (editingClient) {
+        const result = await clientStore.update(editingClient.id, {
+          name: formData.name,
+          age,
+          gender: formData.gender,
+          contact: formData.contact,
+          notes: formData.notes,
+          riskLevel: formData.riskLevel,
+          assignedWorker: formData.assignedWorker,
+        });
+
+        if (!result) {
+          toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Failed to update client. Please ensure you are logged in and try again.",
+          });
+          return;
+        }
+
+        toast({
+          title: "Client Updated",
+          description: `${formData.name}'s profile has been updated.`,
+        });
+      } else {
+        const result = await clientStore.add({
+          name: formData.name,
+          age,
+          gender: formData.gender,
+          contact: formData.contact,
+          notes: formData.notes,
+          riskLevel: formData.riskLevel,
+          assignedWorker: formData.assignedWorker,
+        });
+
+        if (!result) {
+          toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "Failed to add client. Please ensure you are logged in and try again.",
+          });
+          return;
+        }
+
+        toast({
+          title: "Client Added",
+          description: `${formData.name} has been added to your client list.`,
+        });
+      }
+
+      await loadClients();
+      setDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving client:", error);
       toast({
-        title: "Client Updated",
-        description: `${formData.name}'s profile has been updated.`,
-      });
-    } else {
-      await clientStore.add({
-        name: formData.name,
-        age,
-        gender: formData.gender,
-        contact: formData.contact,
-        notes: formData.notes,
-        riskLevel: formData.riskLevel,
-        assignedWorker: formData.assignedWorker,
-      });
-      toast({
-        title: "Client Added",
-        description: `${formData.name} has been added to your client list.`,
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
       });
     }
-
-    loadClients();
-    setDialogOpen(false);
   };
 
   const handleDeleteClick = (id: string) => {
