@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import lamejs from 'lamejs';
+import * as lamejs from 'lamejs';
 
 self.onmessage = (e: MessageEvent) => {
   const { pcm, sampleRate } = e.data;
@@ -14,6 +14,7 @@ self.onmessage = (e: MessageEvent) => {
     }
     
     // Initialize MP3 encoder (mono, 128kbps)
+    // @ts-ignore - lamejs types are not perfect
     const mp3encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
     const mp3Data: Int8Array[] = [];
     
