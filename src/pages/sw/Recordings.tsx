@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { recordingsStore, Recording } from "@/lib/recordings/store";
-import { getExtensionForMime } from "@/lib/audio/mimeDetection";
+import { getExtensionForMime, mapMimeToExt } from "@/lib/audio/mimeDetection";
 import { AudioLines, Play, Download, Upload, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -43,6 +43,33 @@ const Recordings = () => {
 
   useEffect(() => {
     loadRecordings();
+    
+    // One-time cleanup for old entries without bytes
+    const cleanup = async () => {
+      const allRecordings = recordingsStore.getAll();
+      let needsUpdate = false;
+      
+      for (const r of allRecordings) {
+        if (typeof r.bytes !== 'number') {
+          try {
+            const response = await fetch(r.url);
+            const blob = await response.blob();
+            r.bytes = blob.size;
+            r.mime = blob.type;
+            r.ext = mapMimeToExt(blob.type);
+            needsUpdate = true;
+          } catch (e) {
+            console.warn('Failed to update recording metadata:', e);
+          }
+        }
+      }
+      
+      if (needsUpdate) {
+        loadRecordings();
+      }
+    };
+    
+    cleanup();
   }, []);
 
   useEffect(() => {
@@ -63,20 +90,22 @@ const Recordings = () => {
     }
   };
 
-  const handleDownload = (recording: Recording) => {
-    const blob = recording.blob;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    
-    // Determine extension based on blob type
-    const mimeType = blob.type || 'audio/webm';
-    const ext = getExtensionForMime(mimeType);
-    a.download = `${recording.name}${ext}`;
-    
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Recording downloaded");
+  const handleDownload = async (recording: Recording) => {
+    try {
+      const response = await fetch(recording.url);
+      const blob = await response.blob();
+      const ext = recording.ext || mapMimeToExt(recording.mime || blob.type);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${recording.name}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Recording downloaded");
+    } catch (e) {
+      toast.error('Failed to download recording');
+      console.error(e);
+    }
   };
 
   const handleUseInUpload = (recordingId: string) => {
@@ -99,20 +128,24 @@ const Recordings = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatFileSize = (blob: Blob) => {
-    const bytes = blob.size;
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const formatFileSize = (bytes?: number): string => {
+    if (typeof bytes !== 'number' || isNaN(bytes)) return '—';
+    if (bytes < 1048576) {
+      return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    }
+    return `${(bytes / 1048576).toFixed(2)} MB`;
   };
 
-  const getFormatLabel = (blob: Blob) => {
-    const mimeType = blob.type || 'audio/webm';
+  const getFormatLabel = (recording: Recording): string => {
+    if (recording.ext) return recording.ext.toUpperCase();
+    if (recording.mime) return mapMimeToExt(recording.mime).toUpperCase();
+    // Fallback to blob-based detection
+    const mimeType = recording.blob?.type || 'audio/webm';
     if (mimeType.includes('mp4') || mimeType.includes('aac')) return 'M4A';
     if (mimeType.includes('wav')) return 'WAV';
     if (mimeType.includes('ogg')) return 'OGG';
-    if (mimeType.includes('webm')) return 'WebM';
-    return 'Audio';
+    if (mimeType.includes('webm')) return 'WEBM';
+    return 'AUDIO';
   };
 
   return (
@@ -201,9 +234,9 @@ const Recordings = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">{getFormatLabel(recording.blob)}</Badge>
+                          <Badge variant="outline">{getFormatLabel(recording)}</Badge>
                           <span className="text-sm text-muted-foreground">
-                            {formatFileSize(recording.blob)}
+                            {formatFileSize(recording.bytes)}
                           </span>
                         </div>
                       </TableCell>

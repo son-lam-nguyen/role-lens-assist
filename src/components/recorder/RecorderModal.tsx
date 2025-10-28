@@ -31,6 +31,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const selectedMimeRef = useRef<string>('');
   const navigate = useNavigate();
 
   const engineRef = useRef<Engine>('mediarecorder-opus');
@@ -58,9 +59,18 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = preferredAudioMime();
+      
+      // Choose mime based on export format
+      let mimeType = '';
+      if (exportFormat === 'm4a' && m4aSupported) {
+        mimeType = 'audio/mp4;codecs=aac';
+      } else {
+        mimeType = preferredAudioMime();
+      }
+      
       const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       setRecordedMimeType(mimeType);
+      selectedMimeRef.current = mimeType;
       
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -157,35 +167,43 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
 
     try {
       setIsConverting(true);
-      let blobToSave = recordedBlob;
-      let mimeType = recordedMimeType;
+      let exportBlob: Blob;
+      let mime = '';
+      let ext = '';
 
-      // Convert based on export format
-      if (exportFormat === 'wav') {
+      // Build export blob based on selected format
+      if (exportFormat === 'm4a' && m4aSupported && (selectedMimeRef.current?.includes('audio/mp4') || selectedMimeRef.current?.includes('audio/aac'))) {
+        exportBlob = recordedBlob;
+        mime = exportBlob.type || selectedMimeRef.current || 'audio/mp4';
+        ext = 'm4a';
+      } else if (exportFormat === 'wav') {
         if (capturedPCMRef.current && capturedSampleRateRef.current) {
-          blobToSave = pcmToWav(capturedPCMRef.current, capturedSampleRateRef.current, 1);
+          exportBlob = pcmToWav(capturedPCMRef.current, capturedSampleRateRef.current, 1);
         } else {
           toast.loading("Converting to WAV...");
-          blobToSave = await blobToWav(recordedBlob);
+          exportBlob = await blobToWav(recordedBlob);
           toast.dismiss();
         }
-        mimeType = 'audio/wav';
-      } else if (exportFormat === 'm4a') {
-        // Only use M4A if natively recorded as M4A
-        const ext = getExtensionForMime(recordedMimeType);
-        if (ext !== '.m4a') {
-          blobToSave = recordedBlob; // Fallback to original
-          mimeType = recordedMimeType;
-        }
+        mime = 'audio/wav';
+        ext = 'wav';
+      } else {
+        // original format
+        exportBlob = recordedBlob;
+        mime = exportBlob.type || selectedMimeRef.current || 'audio/webm';
+        ext = mapMimeToExt(mime);
       }
-      // 'original' uses recordedBlob as-is
 
-      const url = URL.createObjectURL(blobToSave);
+      const bytes = exportBlob.size;
+      const url = URL.createObjectURL(exportBlob);
+      
       const recording = recordingsStore.add({
         name,
-        blob: blobToSave,
+        blob: exportBlob,
         duration: recordingTime,
         url,
+        mime,
+        ext,
+        bytes,
       });
 
       toast.success("Recording saved!", {
@@ -215,6 +233,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     }
 
     const name = recordingName.trim() || `Recording ${new Date().toLocaleString()}`;
+    const mime = recordedBlob.type || selectedMimeRef.current || 'audio/webm';
+    const ext = mapMimeToExt(mime);
+    const bytes = recordedBlob.size;
     const url = URL.createObjectURL(recordedBlob);
     
     const recording = recordingsStore.add({
@@ -222,6 +243,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       blob: recordedBlob,
       duration: recordingTime,
       url,
+      mime,
+      ext,
+      bytes,
     });
 
     toast.success(`Loaded recording: ${name} — analyzing…`);

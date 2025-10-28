@@ -5,6 +5,9 @@ export interface Recording {
   duration: number;
   createdAt: string;
   url: string;
+  mime?: string;
+  ext?: string;
+  bytes?: number;
 }
 
 const STORAGE_KEY = 'supportlens_recordings';
