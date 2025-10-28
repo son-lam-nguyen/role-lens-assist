@@ -1,18 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Clock, TrendingUp, Mic } from "lucide-react";
+import { Upload, FileText, Clock, TrendingUp, Mic, Play } from "lucide-react";
 import { mockTranscripts } from "@/lib/mock/mockTranscripts";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
+import { recordingsStore, Recording } from "@/lib/recordings/store";
+import { clientStore, Client } from "@/lib/clients/store";
 
 const Overview = () => {
   const navigate = useNavigate();
   const [openRecorder, setOpenRecorder] = useState(false);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [recordingsData, clientsData] = await Promise.all([
+        recordingsStore.getAll(),
+        clientStore.listAll(),
+      ]);
+      setRecordings(recordingsData);
+      setClients(clientsData);
+    };
+    loadData();
+  }, [openRecorder]);
+
+  const getClientName = (clientId?: string) => {
+    if (!clientId) return "Unassigned";
+    const client = clients.find(c => c.id === clientId);
+    return client?.name || "Unknown Client";
+  };
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const kpis = [
-    { label: "Sessions Summarized", value: "24", icon: FileText, trend: "+8 this week" },
+    { label: "Total Clients", value: clients.length.toString(), icon: FileText, trend: `${recordings.length} recordings` },
     { label: "Guidelines Attached", value: "47", icon: TrendingUp, trend: "+12 this week" },
     { label: "Risk Flags Detected", value: "6", icon: Badge, trend: "2 high priority" },
     { label: "Avg. Time Saved", value: "18m", icon: Clock, trend: "per session" },
@@ -51,39 +79,47 @@ const Overview = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="card-hover">
           <CardHeader>
-            <CardTitle className="text-xl">Recent Transcripts</CardTitle>
-            <CardDescription>Your latest session recordings</CardDescription>
+            <CardTitle className="text-xl">Recent Recordings</CardTitle>
+            <CardDescription>Your latest audio recordings</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mockTranscripts.map((transcript) => (
-                <div
-                  key={transcript.id}
-                  className="flex items-start justify-between p-4 rounded-xl border hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all cursor-pointer group"
-                  onClick={() => navigate("/sw/upload")}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && navigate("/sw/upload")}
-                >
-                  <div className="space-y-1 flex-1">
-                    <h4 className="font-semibold group-hover:text-primary transition-colors">{transcript.title}</h4>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>{Math.floor(transcript.durationSec / 60)}m {transcript.durationSec % 60}s</span>
-                      <span>•</span>
-                      <span>{new Date(transcript.createdAt).toLocaleDateString()}</span>
+            {recordings.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Mic className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No recordings yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recordings.slice(0, 5).map((recording) => (
+                  <div
+                    key={recording.id}
+                    className="flex items-start justify-between p-4 rounded-xl border hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all cursor-pointer group"
+                    onClick={() => navigate(`/sw/recordings`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && navigate("/sw/recordings")}
+                  >
+                    <div className="space-y-1 flex-1">
+                      <h4 className="font-semibold group-hover:text-primary transition-colors">{recording.name}</h4>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{formatDuration(recording.duration)}</span>
+                        <span>•</span>
+                        <span>{new Date(recording.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {recording.clientId && (
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {getClientName(recording.clientId)}
+                        </Badge>
+                      )}
                     </div>
+                    <Button variant="ghost" size="sm">
+                      <Play className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <div className="flex flex-wrap gap-1 max-w-[200px]">
-                    {transcript.flags.slice(0, 3).map((flag) => (
-                      <Badge key={flag} variant="secondary" className="text-xs">
-                        {flag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -120,13 +156,22 @@ const Overview = () => {
               Create SOAP Note
             </Button>
             <Button
+              onClick={() => navigate("/sw/clients")}
+              variant="outline"
+              className="w-full justify-start group hover:border-primary/50"
+              size="lg"
+            >
+              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
+              Manage Clients
+            </Button>
+            <Button
               onClick={() => setOpenRecorder(true)}
               variant="outline"
               className="w-full justify-start group hover:border-primary/50"
               size="lg"
             >
               <Mic className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Recordings
+              Record Audio
             </Button>
 
             <div className="pt-4 mt-4 border-t">

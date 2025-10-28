@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mic, Square, Pause, Play, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
+import { clientStore } from "@/lib/clients/store";
 import { useNavigate } from "react-router-dom";
 import { blobToWav, pcmToWav } from "@/lib/audio/wav";
 import { getPreferredEngine, createPcmCapture, type Engine, type PCMCapture } from "@/lib/audio/recorderEngine";
@@ -15,14 +17,17 @@ import { preferredAudioMime, getExtensionForMime, supportsM4A, mapMimeToExt } fr
 interface RecorderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedClientId?: string;
 }
 
-export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
+export const RecorderModal = ({ open, onOpenChange, preselectedClientId }: RecorderModalProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordingName, setRecordingName] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const [exportFormat, setExportFormat] = useState<'m4a' | 'wav' | 'original'>('m4a');
   const [isConverting, setIsConverting] = useState(false);
   const [recordedMimeType, setRecordedMimeType] = useState<string>('');
@@ -50,11 +55,19 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     // Check M4A support
     setM4aSupported(supportsM4A());
 
+    // Load clients
+    clientStore.listAll().then(setClients);
+
+    // Set preselected client if provided
+    if (preselectedClientId) {
+      setSelectedClientId(preselectedClientId);
+    }
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       pcmCaptureRef.current?.dispose();
     };
-  }, []);
+  }, [preselectedClientId]);
 
   const startRecording = async () => {
     try {
@@ -253,6 +266,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
         mime,
         ext,
         bytes,
+        clientId: selectedClientId || undefined,
       });
 
       if (!recording) {
@@ -300,6 +314,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       mime,
       ext,
       bytes,
+      clientId: selectedClientId || undefined,
     });
 
     if (!recording) {
@@ -372,6 +387,9 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     setRecordingTime(0);
     setRecordedBlob(null);
     setRecordingName("");
+    if (!preselectedClientId) {
+      setSelectedClientId("");
+    }
     chunksRef.current = [];
     capturedPCMRef.current = null;
     capturedSampleRateRef.current = null;
@@ -435,12 +453,29 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
             {recordedBlob && (
               <div className="w-full space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Recording Name</label>
+                  <Label className="text-sm font-medium">Recording Name</Label>
                   <Input
                     value={recordingName}
                     onChange={(e) => setRecordingName(e.target.value)}
                     placeholder="Enter recording name..."
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Client (Optional)</Label>
+                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a client..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No client</SelectItem>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

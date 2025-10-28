@@ -32,17 +32,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Mic } from "lucide-react";
 import { clientStore, type Client, type RiskLevel } from "@/lib/clients/store";
+import { recordingsStore, type Recording } from "@/lib/recordings/store";
+import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { useToast } from "@/hooks/use-toast";
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [recordings, setRecordings] = useState<Recording[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+  const [recorderOpen, setRecorderOpen] = useState(false);
+  const [selectedClientForRecording, setSelectedClientForRecording] = useState<string>("");
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -57,11 +62,32 @@ const Clients = () => {
 
   useEffect(() => {
     loadClients();
+    loadRecordings();
   }, []);
+
+  useEffect(() => {
+    if (!recorderOpen) {
+      loadRecordings();
+    }
+  }, [recorderOpen]);
 
   const loadClients = async () => {
     const clients = await clientStore.listAll();
     setClients(clients);
+  };
+
+  const loadRecordings = async () => {
+    const data = await recordingsStore.getAll();
+    setRecordings(data);
+  };
+
+  const getClientRecordings = (clientId: string) => {
+    return recordings.filter(rec => rec.clientId === clientId);
+  };
+
+  const handleRecordForClient = (clientId: string) => {
+    setSelectedClientForRecording(clientId);
+    setRecorderOpen(true);
   };
 
   const handleAdd = () => {
@@ -220,13 +246,14 @@ const Clients = () => {
                 <TableHead>Contact</TableHead>
                 <TableHead>Risk Level</TableHead>
                 <TableHead>Assigned Worker</TableHead>
+                <TableHead>Recordings</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {searchQuery ? "No clients match your search." : "No clients yet. Add your first client to get started."}
                   </TableCell>
                 </TableRow>
@@ -243,6 +270,21 @@ const Clients = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>{client.assignedWorker || '—'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                          {getClientRecordings(client.id).length}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRecordForClient(client.id)}
+                          aria-label="Record audio"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -396,6 +438,12 @@ const Clients = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RecorderModal 
+        open={recorderOpen} 
+        onOpenChange={setRecorderOpen}
+        preselectedClientId={selectedClientForRecording}
+      />
     </div>
   );
 };

@@ -189,6 +189,7 @@ export type Database = {
       }
       recordings: {
         Row: {
+          client_id: string | null
           created_at: string
           duration: number
           file_extension: string | null
@@ -200,6 +201,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           duration: number
           file_extension?: string | null
@@ -211,6 +213,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           duration?: number
           file_extension?: string | null
@@ -221,7 +224,15 @@ export type Database = {
           storage_path?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "recordings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       soap_notes: {
         Row: {

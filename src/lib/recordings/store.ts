@@ -10,6 +10,7 @@ export interface Recording {
   mime?: string;
   ext?: string;
   bytes?: number;
+  clientId?: string;
 }
 
 export const recordingsStore = {
@@ -41,6 +42,7 @@ export const recordingsStore = {
         mime: row.mime_type || undefined,
         ext: row.file_extension || undefined,
         bytes: row.file_size ? Number(row.file_size) : undefined,
+        clientId: row.client_id || undefined,
       };
     }));
   },
@@ -81,6 +83,7 @@ export const recordingsStore = {
         mime_type: recording.mime,
         file_extension: recording.ext,
         file_size: recording.bytes,
+        client_id: recording.clientId || null,
       })
       .select()
       .single();
@@ -103,6 +106,7 @@ export const recordingsStore = {
       mime: data.mime_type || undefined,
       ext: data.file_extension || undefined,
       bytes: data.file_size ? Number(data.file_size) : undefined,
+      clientId: data.client_id || undefined,
     };
   },
 
@@ -154,6 +158,7 @@ export const recordingsStore = {
       mime: data.mime_type || undefined,
       ext: data.file_extension || undefined,
       bytes: data.file_size ? Number(data.file_size) : undefined,
+      clientId: data.client_id || undefined,
     };
   }
 };
