@@ -116,64 +116,56 @@ const Upload = () => {
 
   // Parse webhook response to extract transcript data
   const parseWebhookResponse = (data: any): Transcript => {
-    // Extract transcript text (try common field names)
-    const transcriptText = data.transcript || data.text || data.transcription || 
-                          data.transcript_text || data.content || 
+    // Check if data is nested under "output"
+    const responseData = data.output || data;
+
+    // Extract transcript text
+    const transcriptText = responseData.transcript || responseData.text || 
+                          responseData.transcription || responseData.transcript_text || 
                           JSON.stringify(data, null, 2);
 
-    // Extract summary/key points
-    const tldr = data.summary ? 
-                 (Array.isArray(data.summary) ? data.summary : [data.summary]) :
-                 data.key_points ? 
-                 (Array.isArray(data.key_points) ? data.key_points : [data.key_points]) :
-                 data.tldr ?
-                 (Array.isArray(data.tldr) ? data.tldr : [data.tldr]) :
+    // Extract summary/key points from summary_notes or key_topics
+    const tldr = responseData.summary_notes ? 
+                 [responseData.summary_notes] :
+                 responseData.key_topics ?
+                 (Array.isArray(responseData.key_topics) ? responseData.key_topics : [responseData.key_topics]) :
                  ['Processing complete'];
 
-    // Extract key phrases
-    const keyphrases = data.key_phrases ?
-                      (Array.isArray(data.key_phrases) ? data.key_phrases : [data.key_phrases]) :
-                      data.keyphrases ?
-                      (Array.isArray(data.keyphrases) ? data.keyphrases : [data.keyphrases]) :
-                      data.keywords ?
-                      (Array.isArray(data.keywords) ? data.keywords : [data.keywords]) :
+    // Extract key phrases from key_topics
+    const keyphrases = responseData.key_topics ?
+                      (Array.isArray(responseData.key_topics) ? responseData.key_topics : [responseData.key_topics]) :
                       [];
 
-    // Extract confidence score
-    const confidence = data.confidence_score || data.confidence || 
-                      data.accuracy || 0.85;
+    // Calculate confidence from uncertainty (inverse relationship)
+    const confidence = responseData.uncertainty !== undefined ? 
+                      (1 - responseData.uncertainty) : 0.85;
 
-    // Extract risk flags
-    const rawFlags = data.risk_flags ?
-                    (Array.isArray(data.risk_flags) ? data.risk_flags : [data.risk_flags]) :
-                    data.flags ?
-                    (Array.isArray(data.flags) ? data.flags : [data.flags]) :
-                    data.risk_analysis ?
-                    (Array.isArray(data.risk_analysis) ? data.risk_analysis : [data.risk_analysis]) :
-                    [];
-
-    const flags = rawFlags.map((flag: any) => {
-      if (typeof flag === 'string') {
-        return flag;
+    // Extract risk flags from risk_assessment
+    const flags: string[] = [];
+    if (responseData.risk_assessment) {
+      if (responseData.risk_assessment.risk_level && responseData.risk_assessment.risk_level !== 'none') {
+        flags.push(responseData.risk_assessment.risk_level);
       }
-      return flag.type || flag.name || flag.description || String(flag);
-    });
+      if (responseData.risk_assessment.signals && Array.isArray(responseData.risk_assessment.signals)) {
+        flags.push(...responseData.risk_assessment.signals.slice(0, 3)); // Take first 3 signals
+      }
+    }
 
     // Extract duration
-    const durationSec = data.duration || data.duration_sec || data.length || 
+    const durationSec = responseData.duration || responseData.duration_sec || 
                        recordingDuration || 0;
 
     return {
-      id: data.id || `transcript_${Date.now()}`,
-      title: data.title || data.name || selectedFile?.name.replace(/\.[^/.]+$/, "") || 'Audio Transcript',
+      id: responseData.id || `transcript_${Date.now()}`,
+      title: responseData.title || selectedFile?.name.replace(/\.[^/.]+$/, "") || 'Audio Transcript',
       durationSec,
-      createdAt: data.created_at || data.timestamp || new Date().toISOString(),
+      createdAt: responseData.created_at || new Date().toISOString(),
       text: transcriptText,
       tldr,
       keyphrases,
       confidence,
       flags,
-      piiMasked: data.pii_masked !== undefined ? data.pii_masked : true
+      piiMasked: true
     };
   };
 
@@ -301,34 +293,170 @@ const Upload = () => {
             )}
 
             {webhookResponse && (
-              <Card className="card-hover">
-                <CardHeader>
-                  <CardTitle className="text-lg">Additional Data</CardTitle>
-                  <CardDescription>Other fields from webhook response</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    {Object.entries(webhookResponse).map(([key, value]) => {
-                      // Skip already displayed fields
-                      if (['transcript', 'text', 'transcription', 'transcript_text', 'content',
-                           'summary', 'key_points', 'tldr', 'key_phrases', 'keyphrases', 'keywords',
-                           'confidence_score', 'confidence', 'accuracy',
-                           'risk_flags', 'flags', 'risk_analysis'].includes(key)) {
-                        return null;
-                      }
-                      
-                      return (
-                        <div key={key} className="border-b pb-2">
-                          <span className="font-medium">{key}: </span>
-                          <span className="text-muted-foreground">
-                            {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                          </span>
+              <>
+                {/* Speaker Analysis */}
+                {(() => {
+                  const output = webhookResponse.output || webhookResponse;
+                  if (!output.speakers) return null;
+                  
+                  return (
+                    <Card className="card-hover">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Speaker Analysis</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {output.speakers.user && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Client</h4>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="font-medium">Sentiment:</span> <Badge variant="outline">{output.speakers.user.sentiment}</Badge></p>
+                              {output.speakers.user.top_emotions && (
+                                <p><span className="font-medium">Top Emotions:</span> {output.speakers.user.top_emotions.join(', ')}</p>
+                              )}
+                              {output.speakers.user.toxicity !== undefined && (
+                                <p><span className="font-medium">Toxicity:</span> {output.speakers.user.toxicity}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {output.speakers.support_worker && (
+                          <div className="pt-2 border-t">
+                            <h4 className="text-sm font-medium mb-2">Support Worker</h4>
+                            <div className="space-y-1 text-sm">
+                              <p><span className="font-medium">Sentiment:</span> <Badge variant="outline">{output.speakers.support_worker.sentiment}</Badge></p>
+                              {output.speakers.support_worker.top_emotions && (
+                                <p><span className="font-medium">Top Emotions:</span> {output.speakers.support_worker.top_emotions.join(', ')}</p>
+                              )}
+                              {output.speakers.support_worker.supportiveness !== undefined && (
+                                <p><span className="font-medium">Supportiveness:</span> {(output.speakers.support_worker.supportiveness * 100).toFixed(0)}%</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
+                {/* Risk Assessment */}
+                {(() => {
+                  const output = webhookResponse.output || webhookResponse;
+                  if (!output.risk_assessment) return null;
+                  
+                  return (
+                    <Card className="card-hover">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Risk Assessment</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div>
+                          <span className="text-sm font-medium">Risk Level: </span>
+                          <Badge variant={
+                            output.risk_assessment.risk_level === 'imminent' || output.risk_assessment.risk_level === 'high' ? 'destructive' :
+                            output.risk_assessment.risk_level === 'moderate' ? 'outline' :
+                            'default'
+                          }>
+                            {output.risk_assessment.risk_level}
+                          </Badge>
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+                        {output.risk_assessment.signals && output.risk_assessment.signals.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-2">Signals:</h4>
+                            <ul className="space-y-1">
+                              {output.risk_assessment.signals.map((signal: string, idx: number) => (
+                                <li key={idx} className="text-sm text-muted-foreground flex gap-2">
+                                  <span className="text-primary">•</span>
+                                  <span>{signal}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {output.risk_assessment.recommended_action && (
+                          <div className="pt-2 border-t">
+                            <p className="text-sm">
+                              <span className="font-medium">Recommended Action:</span><br />
+                              {output.risk_assessment.recommended_action}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
+                {/* Evidence Quotes */}
+                {(() => {
+                  const output = webhookResponse.output || webhookResponse;
+                  if (!output.evidence || !Array.isArray(output.evidence) || output.evidence.length === 0) return null;
+                  
+                  return (
+                    <Card className="card-hover">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Key Evidence</CardTitle>
+                        <CardDescription>Notable quotes from conversation</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {output.evidence.map((item: any, idx: number) => (
+                            <div key={idx} className="border-l-2 border-primary pl-3">
+                              <p className="text-sm italic text-muted-foreground">"{item.quote}"</p>
+                              <p className="text-xs mt-1">
+                                <Badge variant="outline" className="mr-2">{item.speaker}</Badge>
+                                {item.timestamp_range && item.timestamp_range !== 'N/A' && (
+                                  <span className="text-muted-foreground">{item.timestamp_range}</span>
+                                )}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
+                {/* Conversation Metadata */}
+                {(() => {
+                  const output = webhookResponse.output || webhookResponse;
+                  if (!output.language && !output.conversation_type && !output.data_quality) return null;
+                  
+                  return (
+                    <Card className="card-hover">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Metadata</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2 text-sm">
+                        {output.language && (
+                          <p><span className="font-medium">Language:</span> {output.language.toUpperCase()}</p>
+                        )}
+                        {output.conversation_type && (
+                          <p><span className="font-medium">Type:</span> {output.conversation_type}</p>
+                        )}
+                        {output.data_quality && (
+                          <div className="pt-2 border-t">
+                            <p className="font-medium mb-1">Data Quality:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {output.data_quality.low_audio && <Badge variant="destructive">Low Audio</Badge>}
+                              {output.data_quality.translation_used && <Badge variant="secondary">Translation Used</Badge>}
+                              {output.data_quality.missing_timestamps && <Badge variant="outline">No Timestamps</Badge>}
+                              {output.data_quality.partial_transcript && <Badge variant="destructive">Partial</Badge>}
+                              {!output.data_quality.low_audio && !output.data_quality.translation_used && 
+                               !output.data_quality.missing_timestamps && !output.data_quality.partial_transcript && (
+                                <Badge variant="default">Good Quality</Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {output.uncertainty !== undefined && (
+                          <p className="pt-2 border-t">
+                            <span className="font-medium">Confidence:</span> {((1 - output.uncertainty) * 100).toFixed(0)}%
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </>
             )}
 
             <Card className="card-hover">
