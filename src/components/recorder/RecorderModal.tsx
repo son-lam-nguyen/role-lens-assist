@@ -66,17 +66,33 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Choose mime based on export format
-      let mimeType = '';
-      if (exportFormat === 'm4a' && m4aSupported) {
-        mimeType = 'audio/mp4;codecs=aac';
-      } else {
-        mimeType = preferredAudioMime();
+      // Choose desired mime based on export format
+      const desiredMime = (exportFormat === 'm4a' && m4aSupported)
+        ? 'audio/mp4;codecs=aac'
+        : preferredAudioMime();
+
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, desiredMime ? { mimeType: desiredMime } : undefined);
+        setRecordedMimeType(desiredMime);
+        selectedMimeRef.current = desiredMime;
+      } catch (e) {
+        console.warn('Failed to init MediaRecorder with desired mime, falling back', e);
+        const fallback = preferredAudioMime();
+        try {
+          mediaRecorder = new MediaRecorder(stream, fallback ? { mimeType: fallback } : undefined);
+          setRecordedMimeType(fallback);
+          selectedMimeRef.current = fallback;
+          if (exportFormat === 'm4a') {
+            toast.info('M4A not available on this browser. Using WebM/Opus.');
+          }
+        } catch (e2) {
+          console.warn('Fallback media type failed, using default constructor', e2);
+          mediaRecorder = new MediaRecorder(stream);
+          setRecordedMimeType(mediaRecorder.mimeType);
+          selectedMimeRef.current = mediaRecorder.mimeType;
+        }
       }
-      
-      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      setRecordedMimeType(mimeType);
-      selectedMimeRef.current = mimeType;
       
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -88,7 +104,8 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: mimeType || 'audio/webm' });
+        const type = selectedMimeRef.current || recordedMimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type });
         setRecordedBlob(blob);
         stream.getTracks().forEach(track => track.stop());
       };
