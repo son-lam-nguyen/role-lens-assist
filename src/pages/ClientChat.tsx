@@ -77,7 +77,19 @@ const ClientChat = () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const clientId = user?.id || `anon_${Date.now()}`;
+      
+      // Generate a proper UUID for anonymous users
+      let clientId = user?.id;
+      if (!clientId) {
+        // Create anonymous user session with proper UUID
+        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+        if (anonError) throw anonError;
+        clientId = anonData.user?.id;
+      }
+
+      if (!clientId) {
+        throw new Error("Could not establish user session");
+      }
 
       const { data, error } = await conversationStore.createConversation(clientId);
       if (error) throw error;
@@ -135,9 +147,11 @@ const ClientChat = () => {
     if (humanSupportMode && conversationId) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const senderId = user?.id || `anon_${Date.now()}`;
+        if (!user?.id) {
+          throw new Error("User session not found");
+        }
         
-        await messageStore.sendMessage(conversationId, senderId, messageText, 'client');
+        await messageStore.sendMessage(conversationId, user.id, messageText, 'client');
         setIsLoading(false);
         return;
       } catch (error) {
