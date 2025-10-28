@@ -46,8 +46,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleSupabaseAuth = async (username: string) => {
-    // For demo purposes, use a valid email domain
-    const email = `${username}@example.com`;
+    // Use a properly formatted test email that Supabase will accept
+    const email = `${username}@test.supportlens.local`;
     const password = "DemoPassword2024!";
     
     console.log("🔐 Attempting Supabase auth for:", email);
@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (signUpError) {
           console.error("❌ Supabase signup error:", signUpError);
+          console.error("💡 IMPORTANT: Go to Supabase Dashboard > Authentication > Email Auth > Disable 'Confirm email'");
           return;
         }
 
@@ -88,7 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.log("✅ Signed up and auto-confirmed successfully");
         } else if (signUpData?.user && !signUpData?.session) {
           console.warn("⚠️ User created but needs email confirmation. Session not available yet.");
-          console.log("💡 To fix: Disable 'Confirm email' in Supabase Dashboard > Authentication > Providers > Email");
+          console.error("💡 REQUIRED: Go to https://supabase.com/dashboard/project/jtojfoumstpmqswrtuas/auth/providers");
+          console.error("💡 Then disable 'Confirm email' under Email Provider settings");
         }
       }
     } catch (error) {
