@@ -59,8 +59,9 @@ const Clients = () => {
     loadClients();
   }, []);
 
-  const loadClients = () => {
-    setClients(clientStore.listAll());
+  const loadClients = async () => {
+    const clients = await clientStore.listAll();
+    setClients(clients);
   };
 
   const handleAdd = () => {
@@ -91,7 +92,7 @@ const Clients = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim() || !formData.age || !formData.contact.trim()) {
       toast({
         variant: "destructive",
@@ -112,7 +113,7 @@ const Clients = () => {
     }
 
     if (editingClient) {
-      clientStore.update(editingClient.id, {
+      await clientStore.update(editingClient.id, {
         name: formData.name,
         age,
         gender: formData.gender,
@@ -126,7 +127,7 @@ const Clients = () => {
         description: `${formData.name}'s profile has been updated.`,
       });
     } else {
-      clientStore.add({
+      await clientStore.add({
         name: formData.name,
         age,
         gender: formData.gender,
@@ -150,10 +151,10 @@ const Clients = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (clientToDelete) {
-      const client = clientStore.getById(clientToDelete);
-      clientStore.remove(clientToDelete);
+      const client = await clientStore.getById(clientToDelete);
+      await clientStore.remove(clientToDelete);
       loadClients();
       toast({
         title: "Client Removed",

@@ -64,8 +64,8 @@ const Calendar = () => {
     loadEvents();
   }, [currentWeekStart]);
 
-  const loadEvents = () => {
-    const weekEvents = calendarStore.listByWeek(currentWeekStart);
+  const loadEvents = async () => {
+    const weekEvents = await calendarStore.listByWeek(currentWeekStart);
     setEvents(weekEvents);
   };
 
@@ -120,7 +120,7 @@ const Calendar = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate fields
     if (!formData.client.trim() || !formData.title.trim() || !formData.date) {
       toast({
@@ -137,7 +137,7 @@ const Calendar = () => {
 
     // Check heavy case limit
     if (formData.risk === "high") {
-      const currentHeavyCount = calendarStore.countHeavy(weekStart);
+      const currentHeavyCount = await calendarStore.countHeavy(weekStart);
       const isEditingSameWeek = editingEvent && 
         startOfWeek(new Date(editingEvent.startISO), { weekStartsOn: 1 }).getTime() === weekStart.getTime();
       const wasHeavy = editingEvent?.risk === "high";
@@ -153,7 +153,7 @@ const Calendar = () => {
     }
 
     if (editingEvent) {
-      calendarStore.update(editingEvent.id, {
+      await calendarStore.update(editingEvent.id, {
         client: formData.client,
         title: formData.title,
         risk: formData.risk,
@@ -166,7 +166,7 @@ const Calendar = () => {
         description: "Follow-up has been updated successfully.",
       });
     } else {
-      calendarStore.add({
+      await calendarStore.add({
         client: formData.client,
         title: formData.title,
         risk: formData.risk,
@@ -184,10 +184,10 @@ const Calendar = () => {
     loadEvents();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!eventToDelete) return;
     
-    calendarStore.remove(eventToDelete);
+    await calendarStore.remove(eventToDelete);
     toast({
       title: "Event Removed",
       description: "Follow-up has been deleted.",

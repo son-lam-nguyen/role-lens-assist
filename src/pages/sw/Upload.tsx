@@ -26,30 +26,40 @@ const Upload = () => {
 
   // Handle importing recording from the recordings page or recorder modal
   useEffect(() => {
-    const from = searchParams.get('from');
-    const recordingId = searchParams.get('id');
-    
-    if ((from === 'recordings' || from === 'recorder') && recordingId) {
-      const recording = recordingsStore.get(recordingId);
-      if (recording) {
-        // Convert blob to File object
-        const file = new File([recording.blob], recording.name, { type: recording.blob.type });
-        setSelectedFile(file);
-        setRecordingDuration(recording.duration);
-        
-        // Auto-process if coming from recorder
-        if (from === 'recorder') {
-          // Use setTimeout to ensure state is updated before processing
-          setTimeout(() => {
-            handleProcessRecording(file);
-          }, 100);
+    const loadRecording = async () => {
+      const from = searchParams.get('from');
+      const recordingId = searchParams.get('id');
+      
+      if ((from === 'recordings' || from === 'recorder') && recordingId) {
+        const recording = await recordingsStore.get(recordingId);
+        if (recording && recording.url) {
+          try {
+            // Fetch the blob from the signed URL
+            const response = await fetch(recording.url);
+            const blob = await response.blob();
+            const file = new File([blob], recording.name, { type: blob.type });
+            setSelectedFile(file);
+            setRecordingDuration(recording.duration);
+            
+            // Auto-process if coming from recorder
+            if (from === 'recorder') {
+              setTimeout(() => {
+                handleProcessRecording(file);
+              }, 100);
+            } else {
+              toast.success(`Loaded recording: ${recording.name}`);
+            }
+          } catch (error) {
+            console.error('Error loading recording:', error);
+            toast.error("Failed to load recording");
+          }
         } else {
-          toast.success(`Loaded recording: ${recording.name}`);
+          toast.error("Recording not found");
         }
-      } else {
-        toast.error("Recording not found");
       }
-    }
+    };
+    
+    loadRecording();
   }, [searchParams]);
 
   const handleProcessRecording = async (file: File) => {

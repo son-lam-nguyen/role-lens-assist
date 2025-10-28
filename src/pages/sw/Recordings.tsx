@@ -36,40 +36,13 @@ const Recordings = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  const loadRecordings = () => {
-    const stored = recordingsStore.getAll();
+  const loadRecordings = async () => {
+    const stored = await recordingsStore.getAll();
     setRecordings(stored);
   };
 
   useEffect(() => {
     loadRecordings();
-    
-    // One-time cleanup for old entries without bytes
-    const cleanup = async () => {
-      const allRecordings = recordingsStore.getAll();
-      let needsUpdate = false;
-      
-      for (const r of allRecordings) {
-        if (typeof r.bytes !== 'number') {
-          try {
-            const response = await fetch(r.url);
-            const blob = await response.blob();
-            r.bytes = blob.size;
-            r.mime = blob.type;
-            r.ext = mapMimeToExt(blob.type);
-            needsUpdate = true;
-          } catch (e) {
-            console.warn('Failed to update recording metadata:', e);
-          }
-        }
-      }
-      
-      if (needsUpdate) {
-        loadRecordings();
-      }
-    };
-    
-    cleanup();
   }, []);
 
   useEffect(() => {
@@ -113,9 +86,9 @@ const Recordings = () => {
     toast.success("Recording ready for analysis");
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deleteTarget) {
-      recordingsStore.remove(deleteTarget);
+      await recordingsStore.remove(deleteTarget);
       loadRecordings();
       setDeleteTarget(null);
       toast.success("Recording deleted");

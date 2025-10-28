@@ -14,7 +14,247 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      calendar_events: {
+        Row: {
+          case_id: string | null
+          client: string
+          created_at: string
+          end_time: string
+          id: string
+          notes: string | null
+          risk: string
+          start_time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          client: string
+          created_at?: string
+          end_time: string
+          id?: string
+          notes?: string | null
+          risk: string
+          start_time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          client?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          notes?: string | null
+          risk?: string
+          start_time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          age: number
+          assigned_worker: string
+          contact: string
+          created_at: string
+          gender: string
+          id: string
+          name: string
+          notes: string | null
+          risk_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age: number
+          assigned_worker: string
+          contact: string
+          created_at?: string
+          gender: string
+          id?: string
+          name: string
+          notes?: string | null
+          risk_level: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          assigned_worker?: string
+          contact?: string
+          created_at?: string
+          gender?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          risk_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recordings: {
+        Row: {
+          created_at: string
+          duration: number
+          file_extension: string | null
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          name: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration: number
+          file_extension?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          file_extension?: string | null
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      soap_notes: {
+        Row: {
+          assessment: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          note_references: string[] | null
+          objective: string | null
+          plan: string | null
+          subjective: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          note_references?: string[] | null
+          objective?: string | null
+          plan?: string | null
+          subjective?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          note_references?: string[] | null
+          objective?: string | null
+          plan?: string | null
+          subjective?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soap_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transcripts: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          key_phrases: string[] | null
+          key_points: string[] | null
+          pii_masked: boolean | null
+          recording_id: string | null
+          risk_flags: Json | null
+          summary: string | null
+          transcript_text: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          key_phrases?: string[] | null
+          key_points?: string[] | null
+          pii_masked?: boolean | null
+          recording_id?: string | null
+          risk_flags?: Json | null
+          summary?: string | null
+          transcript_text: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          key_phrases?: string[] | null
+          key_points?: string[] | null
+          pii_masked?: boolean | null
+          recording_id?: string | null
+          risk_flags?: Json | null
+          summary?: string | null
+          transcript_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcripts_recording_id_fkey"
+            columns: ["recording_id"]
+            isOneToOne: false
+            referencedRelation: "recordings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

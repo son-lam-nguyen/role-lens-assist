@@ -245,7 +245,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       const bytes = exportBlob.size;
       const url = URL.createObjectURL(exportBlob);
       
-      const recording = recordingsStore.add({
+      const recording = await recordingsStore.add({
         name,
         blob: exportBlob,
         duration: recordingTime,
@@ -254,6 +254,11 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
         ext,
         bytes,
       });
+
+      if (!recording) {
+        toast.error("Failed to save recording.");
+        return;
+      }
 
       toast.success("Recording saved!", {
         action: {
@@ -275,7 +280,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!recordedBlob) {
       toast.error("No recording available");
       return;
@@ -287,7 +292,7 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     const bytes = recordedBlob.size;
     const url = URL.createObjectURL(recordedBlob);
     
-    const recording = recordingsStore.add({
+    const recording = await recordingsStore.add({
       name,
       blob: recordedBlob,
       duration: recordingTime,
@@ -296,6 +301,11 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       ext,
       bytes,
     });
+
+    if (!recording) {
+      toast.error("Failed to save recording.");
+      return;
+    }
 
     toast.success(`Loaded recording: ${name} — analyzing…`);
     navigate(`/sw/upload?from=recorder&id=${recording.id}`);
