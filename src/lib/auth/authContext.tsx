@@ -46,10 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleSupabaseAuth = async (username: string) => {
-    // For demo purposes, we'll sign in with a consistent email pattern
-    // In production, you'd want proper user management
-    const email = `${username}@supportlens.demo`;
-    const password = "demo-password-123"; // In production, use secure passwords
+    // For demo purposes, use a valid email domain that Supabase accepts
+    const email = `${username}@supportlens.app`;
+    const password = "DemoPassword2024!"; // Demo password
     
     try {
       // Try to sign in first
@@ -63,6 +62,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/sw`,
+          }
         });
         
         if (signUpError) {
