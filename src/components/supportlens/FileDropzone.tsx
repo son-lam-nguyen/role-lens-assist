@@ -11,6 +11,7 @@ interface FileDropzoneProps {
   progress: number;
   accept?: string;
   initialFile?: File | null;
+  duration?: number;
 }
 
 export const FileDropzone = ({
@@ -19,7 +20,8 @@ export const FileDropzone = ({
   isProcessing,
   progress,
   accept = '.wav,.mp3,.m4a',
-  initialFile = null
+  initialFile = null,
+  duration
 }: FileDropzoneProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(initialFile);
 
@@ -120,7 +122,10 @@ export const FileDropzone = ({
             <div className="flex-1 text-left">
               <p className="font-semibold">{selectedFile.name}</p>
               <p className="text-sm text-muted-foreground">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                {duration !== undefined 
+                  ? `${Math.floor(duration / 60)}:${String(Math.floor(duration % 60)).padStart(2, '0')}`
+                  : `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`
+                }
               </p>
             </div>
             {!isProcessing && (

@@ -22,6 +22,7 @@ const Upload = () => {
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
   const [piiMasked, setPiiMasked] = useState(true);
+  const [recordingDuration, setRecordingDuration] = useState<number | undefined>(undefined);
 
   // Handle importing recording from the recordings page or recorder modal
   useEffect(() => {
@@ -34,6 +35,7 @@ const Upload = () => {
         // Convert blob to File object
         const file = new File([recording.blob], recording.name, { type: recording.blob.type });
         setSelectedFile(file);
+        setRecordingDuration(recording.duration);
         
         // Auto-process if coming from recorder
         if (from === 'recorder') {
@@ -97,6 +99,7 @@ const Upload = () => {
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     setTranscript(null);
+    setRecordingDuration(undefined);
   };
 
   const handleProcess = async () => {
@@ -137,6 +140,7 @@ const Upload = () => {
             isProcessing={isProcessing}
             progress={progress}
             initialFile={selectedFile}
+            duration={recordingDuration}
           />
         </CardContent>
       </Card>
