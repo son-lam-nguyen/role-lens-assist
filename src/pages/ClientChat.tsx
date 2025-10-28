@@ -54,63 +54,119 @@ const ClientChat = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (conversationId) {
-      const channel = messageStore.subscribeToMessages(conversationId, (newMessage: Message) => {
-        if (newMessage.sender_type === 'worker') {
-          const assistantMessage: ChatMessage = {
-            id: newMessage.id,
-            role: "assistant",
-            content: newMessage.content,
-            timestamp: newMessage.created_at,
-          };
-          setMessages((prev) => [...prev, assistantMessage]);
-        }
-      });
+    if (conversationId && humanSupportMode) {
+      // Check if this is a guest conversation
+      const guestData = localStorage.getItem('guest_conversation');
+      const isGuest = !!guestData;
 
-      return () => {
-        channel.unsubscribe();
-      };
+      if (isGuest) {
+        // Poll for messages for guest users
+        const pollInterval = setInterval(async () => {
+          try {
+            const guest = JSON.parse(guestData);
+            const { data, error } = await supabase.functions.invoke('get-guest-messages', {
+              body: {
+                conversation_id: guest.conversation_id,
+                client_secret: guest.client_secret,
+                guest_id: guest.guest_id
+              }
+            });
+
+            if (error) throw error;
+            if (data?.messages) {
+              const workerMessages = data.messages
+                .filter((m: Message) => m.sender_type === 'worker')
+                .map((m: Message) => ({
+                  id: m.id,
+                  role: "assistant" as const,
+                  content: m.content,
+                  timestamp: m.created_at,
+                }));
+              
+              setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const newMessages = workerMessages.filter((m: ChatMessage) => !existingIds.has(m.id));
+                return [...prev, ...newMessages];
+              });
+            }
+          } catch (error) {
+            console.error('Error polling messages:', error);
+          }
+        }, 3000);
+
+        return () => clearInterval(pollInterval);
+      } else {
+        // Use realtime for authenticated users
+        const channel = messageStore.subscribeToMessages(conversationId, (newMessage: Message) => {
+          if (newMessage.sender_type === 'worker') {
+            const assistantMessage: ChatMessage = {
+              id: newMessage.id,
+              role: "assistant",
+              content: newMessage.content,
+              timestamp: newMessage.created_at,
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+          }
+        });
+
+        return () => {
+          channel.unsubscribe();
+        };
+      }
     }
-  }, [conversationId]);
+  }, [conversationId, humanSupportMode]);
 
   const requestHumanSupport = async () => {
     setIsLoading(true);
     try {
+      // Try authenticated user first
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Generate a proper UUID for anonymous users
-      let clientId = user?.id;
-      if (!clientId) {
-        // Create anonymous user session with proper UUID
-        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-        if (anonError) throw anonError;
-        clientId = anonData.user?.id;
-      }
+      let clientId: string;
+      let clientSecret: string | undefined;
+      let conversationIdResult: string;
 
-      if (!clientId) {
-        throw new Error("Could not establish user session");
-      }
-
-      const { data, error } = await conversationStore.createConversation(clientId);
-      if (error) throw error;
-
-      if (data) {
-        setConversationId(data.id);
-        setHumanSupportMode(true);
+      if (user?.id) {
+        // Authenticated user - use normal flow
+        clientId = user.id;
+        const { data, error } = await conversationStore.createConversation(clientId);
+        if (error) throw error;
+        if (!data) throw new Error("Failed to create conversation");
+        conversationIdResult = data.id;
+      } else {
+        // Guest user - use edge function
+        const { data, error } = await supabase.functions.invoke('create-guest-conversation');
         
-        const systemMessage: ChatMessage = {
-          id: `system_${Date.now()}`,
-          role: "assistant",
-          content: "You've been connected to the support request queue. A support worker will join the chat shortly.",
-          timestamp: new Date().toISOString(),
-        };
-        setMessages((prev) => [...prev, systemMessage]);
-
-        toast({
-          title: "Support Requested",
-          description: "A support worker will join shortly"
-        });
+        if (error) throw error;
+        if (!data) throw new Error("Failed to create conversation");
+        
+        conversationIdResult = data.conversation_id;
+        clientSecret = data.client_secret;
+        clientId = data.guest_id;
+        
+        // Store guest credentials in localStorage
+        localStorage.setItem('guest_conversation', JSON.stringify({
+          conversation_id: conversationIdResult,
+          client_secret: clientSecret,
+          guest_id: clientId
+        }));
       }
+
+      setConversationId(conversationIdResult);
+      setHumanSupportMode(true);
+      
+      const systemMessage: ChatMessage = {
+        id: `system_${Date.now()}`,
+        role: "assistant",
+        content: "You've been connected to the support request queue. A support worker will join the chat shortly.",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, systemMessage]);
+
+      toast({
+        title: "Support Requested",
+        description: "A support worker will join shortly"
+      });
     } catch (error) {
       console.error("Failed to request human support:", error);
       toast({
@@ -146,12 +202,32 @@ const ClientChat = () => {
     // If in human support mode, send to support worker
     if (humanSupportMode && conversationId) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.id) {
-          throw new Error("User session not found");
+        // Check if this is a guest conversation
+        const guestData = localStorage.getItem('guest_conversation');
+        
+        if (guestData) {
+          // Guest user - use edge function
+          const guest = JSON.parse(guestData);
+          const { error } = await supabase.functions.invoke('send-guest-message', {
+            body: {
+              conversation_id: guest.conversation_id,
+              client_secret: guest.client_secret,
+              guest_id: guest.guest_id,
+              content: messageText
+            }
+          });
+          
+          if (error) throw error;
+        } else {
+          // Authenticated user - use normal flow
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user?.id) {
+            throw new Error("User session not found");
+          }
+          
+          await messageStore.sendMessage(conversationId, user.id, messageText, 'client');
         }
         
-        await messageStore.sendMessage(conversationId, user.id, messageText, 'client');
         setIsLoading(false);
         return;
       } catch (error) {

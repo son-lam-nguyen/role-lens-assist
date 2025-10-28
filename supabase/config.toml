@@ -1,1 +1,10 @@
 project_id = "jtojfoumstpmqswrtuas"
+
+[functions.create-guest-conversation]
+verify_jwt = false
+
+[functions.send-guest-message]
+verify_jwt = false
+
+[functions.get-guest-messages]
+verify_jwt = false

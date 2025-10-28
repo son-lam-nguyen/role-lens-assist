@@ -101,6 +101,7 @@ export type Database = {
       conversations: {
         Row: {
           client_id: string
+          client_secret: string
           created_at: string
           id: string
           status: string
@@ -109,6 +110,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          client_secret?: string
           created_at?: string
           id?: string
           status?: string
@@ -117,6 +119,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          client_secret?: string
           created_at?: string
           id?: string
           status?: string
