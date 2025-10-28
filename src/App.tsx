@@ -14,6 +14,7 @@ import Clients from "./pages/sw/Clients";
 import Cases from "./pages/sw/Cases";
 import Calendar from "./pages/sw/Calendar";
 import Notes from "./pages/sw/Notes";
+import Messages from "./pages/sw/Messages";
 import Library from "./pages/sw/Library";
 import Recordings from "./pages/sw/Recordings";
 import Settings from "./pages/sw/Settings";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="cases" element={<Cases />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="notes" element={<Notes />} />
+              <Route path="messages" element={<Messages />} />
               <Route path="library" element={<Library />} />
               <Route path="recordings" element={<Recordings />} />
               <Route path="settings" element={<Settings />} />

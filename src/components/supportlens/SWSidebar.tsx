@@ -6,6 +6,7 @@ import {
   Search,
   Calendar,
   NotebookPen,
+  MessageSquare,
   BookOpen,
   AudioLines,
   Settings as SettingsIcon
@@ -28,6 +29,7 @@ const navItems = [
   { title: "Similar Cases", url: "/sw/cases", icon: Search },
   { title: "Calendar", url: "/sw/calendar", icon: Calendar },
   { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen },
+  { title: "Messages", url: "/sw/messages", icon: MessageSquare },
   { title: "Library", url: "/sw/library", icon: BookOpen },
   { title: "Audio Recorded", url: "/sw/recordings", icon: AudioLines },
   { title: "Settings", url: "/sw/settings", icon: SettingsIcon },

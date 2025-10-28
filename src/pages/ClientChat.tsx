@@ -10,7 +10,9 @@ import { CrisisBanner } from "@/components/supportlens/CrisisBanner";
 import { ChatMessage, generateChatbotResponse, quickReplies, detectCrisis } from "@/lib/mock/mockChatbot";
 import { mockPsychoedSnippets } from "@/lib/mock/mockPsychoed";
 import { crisisContactsAU } from "@/lib/mock/mockSettings";
-import { Send, Bot, User, Library, Phone, Mic, Square } from "lucide-react";
+import { conversationStore, messageStore, Message } from "@/lib/messages/store";
+import { supabase } from "@/integrations/supabase/client";
+import { Send, Bot, User, Library, Phone, Mic, Square, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ClientChat = () => {
@@ -29,6 +31,8 @@ const ClientChat = () => {
   const [showCrisisBanner, setShowCrisisBanner] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [humanSupportMode, setHumanSupportMode] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -49,6 +53,64 @@ const ClientChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (conversationId) {
+      const channel = messageStore.subscribeToMessages(conversationId, (newMessage: Message) => {
+        if (newMessage.sender_type === 'worker') {
+          const assistantMessage: ChatMessage = {
+            id: newMessage.id,
+            role: "assistant",
+            content: newMessage.content,
+            timestamp: newMessage.created_at,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+        }
+      });
+
+      return () => {
+        channel.unsubscribe();
+      };
+    }
+  }, [conversationId]);
+
+  const requestHumanSupport = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const clientId = user?.id || `anon_${Date.now()}`;
+
+      const { data, error } = await conversationStore.createConversation(clientId);
+      if (error) throw error;
+
+      if (data) {
+        setConversationId(data.id);
+        setHumanSupportMode(true);
+        
+        const systemMessage: ChatMessage = {
+          id: `system_${Date.now()}`,
+          role: "assistant",
+          content: "You've been connected to the support request queue. A support worker will join the chat shortly.",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, systemMessage]);
+
+        toast({
+          title: "Support Requested",
+          description: "A support worker will join shortly"
+        });
+      }
+    } catch (error) {
+      console.error("Failed to request human support:", error);
+      toast({
+        title: "Error",
+        description: "Failed to request support. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -67,6 +129,27 @@ const ClientChat = () => {
     // Check for crisis keywords
     if (detectCrisis(messageText)) {
       setShowCrisisBanner(true);
+    }
+
+    // If in human support mode, send to support worker
+    if (humanSupportMode && conversationId) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const senderId = user?.id || `anon_${Date.now()}`;
+        
+        await messageStore.sendMessage(conversationId, senderId, messageText, 'client');
+        setIsLoading(false);
+        return;
+      } catch (error) {
+        console.error("Failed to send message to worker:", error);
+        toast({
+          title: "Error",
+          description: "Failed to send message",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
     }
 
     // Send text to n8n webhook and get response
@@ -277,13 +360,27 @@ const ClientChat = () => {
           <div className="grid gap-6 lg:grid-cols-4">
             <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] card-hover">
               <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                    <Bot className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      {humanSupportMode ? <MessageSquare className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">
+                        {humanSupportMode ? "Support Worker Chat" : "Mental Health Support Chat"}
+                      </CardTitle>
+                      <CardDescription>
+                        {humanSupportMode ? "Connected with human support" : "Ask questions, learn coping strategies, and access resources"}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardTitle className="text-xl">Mental Health Support Chat</CardTitle>
+                  {!humanSupportMode && (
+                    <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading}>
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Talk to Support Worker
+                    </Button>
+                  )}
                 </div>
-                <CardDescription>Ask questions, learn coping strategies, and access resources</CardDescription>
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
