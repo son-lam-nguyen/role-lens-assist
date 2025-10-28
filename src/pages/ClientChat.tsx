@@ -79,7 +79,7 @@ const ClientChat = () => {
       formData.append("session_id", sessionIdRef.current);
 
       const webhookResponse = await fetch(
-        "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
+        "https://n8n.birthdaymessaging.space/webhook/913c546c-124f-4347-a34d-1b70a6f89d4d",
         {
           method: "POST",
           body: formData,
@@ -167,7 +167,7 @@ const ClientChat = () => {
 
   const sendAudioToWebhook = async (audioBlob: Blob) => {
     setIsLoading(true);
-    
+
     // Add a message to the chat showing audio was sent
     const audioMessage: ChatMessage = {
       id: `audio_${Date.now()}`,
@@ -187,13 +187,10 @@ const ClientChat = () => {
       formData.append("timestamp", new Date().toISOString());
       formData.append("session_id", sessionIdRef.current);
 
-      const response = await fetch(
-        "https://n8n.birthdaymessaging.space/webhook-test/913c546c-124f-4347-a34d-1b70a6f89d4d",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const response = await fetch("https://n8n.birthdaymessaging.space/webhook/913c546c-124f-4347-a34d-1b70a6f89d4d", {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error(`Webhook returned ${response.status}`);
@@ -232,7 +229,7 @@ const ClientChat = () => {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
-      
+
       toast({
         title: "Error",
         description: "Failed to process audio message",
