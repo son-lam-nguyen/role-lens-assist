@@ -8,7 +8,8 @@ import { Mic, Square, Pause, Play, Download } from "lucide-react";
 import { toast } from "sonner";
 import { recordingsStore } from "@/lib/recordings/store";
 import { useNavigate } from "react-router-dom";
-import { blobToWav, decodeToPCM } from "@/lib/audio/wav";
+import { blobToWav, decodeToPCM, pcmToWav } from "@/lib/audio/wav";
+import { getPreferredEngine, createPcmCapture, type Engine, type PCMCapture } from "@/lib/audio/recorderEngine";
 
 interface RecorderModalProps {
   open: boolean;
@@ -30,13 +31,26 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const mp3WorkerRef = useRef<Worker | null>(null);
   const navigate = useNavigate();
 
+  const engineRef = useRef<Engine>('mediarecorder-opus');
+  const pcmCaptureRef = useRef<PCMCapture | null>(null);
+  const capturedPCMRef = useRef<Float32Array | null>(null);
+  const capturedSampleRateRef = useRef<number | null>(null);
+
   useEffect(() => {
     // Initialize MP3 worker
     mp3WorkerRef.current = new Worker(new URL('@/workers/mp3.worker.ts', import.meta.url), { type: 'module' });
 
+    // Detect preferred capture engine for faster exports
+    getPreferredEngine().then((engine) => {
+      engineRef.current = engine;
+    }).catch(() => {
+      engineRef.current = 'mediarecorder-opus';
+    });
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (mp3WorkerRef.current) mp3WorkerRef.current.terminate();
+      pcmCaptureRef.current?.dispose();
     };
   }, []);
 
@@ -63,6 +77,18 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
+
+      // Start optional PCM capture for instant WAV/MP3 export
+      try {
+        if (engineRef.current === 'pcm-wav') {
+          pcmCaptureRef.current = createPcmCapture();
+          await pcmCaptureRef.current.start(stream);
+          capturedPCMRef.current = null;
+          capturedSampleRateRef.current = null;
+        }
+      } catch (e) {
+        console.warn('PCM capture unavailable, falling back to decode path', e);
+      }
       
       timerRef.current = window.setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -97,6 +123,20 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
+
+      // Finalize PCM capture if running
+      if (pcmCaptureRef.current) {
+        try {
+          const { pcm, sampleRate } = pcmCaptureRef.current.stop();
+          capturedPCMRef.current = pcm;
+          capturedSampleRateRef.current = sampleRate;
+        } catch (e) {
+          console.warn('Failed to finalize PCM capture', e);
+        } finally {
+          pcmCaptureRef.current = null;
+        }
+      }
+
       setIsRecording(false);
       setIsPaused(false);
       if (timerRef.current) {
@@ -142,16 +182,28 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
       setIsConverting(true);
 
       if (exportFormat === 'wav') {
-        toast.loading("Converting to WAV...");
-        const wavBlob = await blobToWav(recordedBlob);
-        downloadBlob(wavBlob, `${filename}.wav`);
-        toast.dismiss();
-        toast.success("Recording downloaded as WAV");
+        // Fast path: if we captured PCM, wrap directly into WAV
+        if (capturedPCMRef.current && capturedSampleRateRef.current) {
+          const wavBlob = pcmToWav(capturedPCMRef.current, capturedSampleRateRef.current, 1);
+          downloadBlob(wavBlob, `${filename}.wav`);
+          toast.success("Recording downloaded as WAV");
+        } else {
+          toast.loading("Converting to WAV...");
+          const wavBlob = await blobToWav(recordedBlob);
+          toast.dismiss();
+          downloadBlob(wavBlob, `${filename}.wav`);
+          toast.success("Recording downloaded as WAV");
+        }
       } else if (exportFormat === 'mp3') {
         toast.loading("Converting to MP3...");
-        const { pcm, sampleRate } = await decodeToPCM(recordedBlob);
-        const mp3Blob = await encodeMp3InWorker(pcm, sampleRate);
-        downloadBlob(mp3Blob, `${filename}.mp3`);
+        if (capturedPCMRef.current && capturedSampleRateRef.current) {
+          const mp3Blob = await encodeMp3InWorker(capturedPCMRef.current, capturedSampleRateRef.current);
+          downloadBlob(mp3Blob, `${filename}.mp3`);
+        } else {
+          const { pcm, sampleRate } = await decodeToPCM(recordedBlob);
+          const mp3Blob = await encodeMp3InWorker(pcm, sampleRate);
+          downloadBlob(mp3Blob, `${filename}.mp3`);
+        }
         toast.dismiss();
         toast.success("Recording downloaded as MP3");
       } else {
@@ -209,6 +261,8 @@ export const RecorderModal = ({ open, onOpenChange }: RecorderModalProps) => {
     setRecordedBlob(null);
     setRecordingName("");
     chunksRef.current = [];
+    capturedPCMRef.current = null;
+    capturedSampleRateRef.current = null;
   };
 
   const formatTime = (seconds: number) => {

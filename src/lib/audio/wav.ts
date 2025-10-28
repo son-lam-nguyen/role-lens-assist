@@ -104,3 +104,43 @@ function mergeChannels(buffer: AudioBuffer): Float32Array {
   
   return result;
 }
+
+/**
+ * Fast path: Wrap raw mono PCM Float32 into a 16-bit PCM WAV Blob
+ */
+export function pcmToWav(pcm: Float32Array, sampleRate: number, channels = 1): Blob {
+  const bitDepth = 16;
+  const bytesPerSample = bitDepth / 8;
+  const dataLength = pcm.length * bytesPerSample * channels; // mono by default
+  const buffer = new ArrayBuffer(44 + dataLength);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + dataLength, true);
+  writeString(view, 8, 'WAVE');
+
+  // fmt chunk
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // PCM chunk size
+  view.setUint16(20, 1, true); // format (PCM)
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * channels * bytesPerSample, true); // byte rate
+  view.setUint16(32, channels * bytesPerSample, true); // block align
+  view.setUint16(34, bitDepth, true);
+
+  // data chunk
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataLength, true);
+
+  // PCM samples (mono)
+  let offset = 44;
+  for (let i = 0; i < pcm.length; i++) {
+    const s = Math.max(-1, Math.min(1, pcm[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    offset += 2;
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}
