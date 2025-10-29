@@ -229,20 +229,93 @@ const Upload = () => {
       )}
 
       {transcript && (
-        <div className="grid gap-6 lg:grid-cols-3 fade-in">
-          <Card className="lg:col-span-2 card-hover">
-            <CardHeader>
-              <CardTitle className="text-xl">Transcript</CardTitle>
-              <CardDescription>
-                {webhookResponse ? 'Auto-detected from webhook response' : 'Automatically generated from audio'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TranscriptViewer text={transcript.text} />
-            </CardContent>
-          </Card>
+        <div className="space-y-6 fade-in">
+          {/* Key Metrics Overview */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {transcript.confidence > 0 && (
+              <Card className="card-hover">
+                <CardContent className="pt-6">
+                  <ConfidenceMeter confidence={transcript.confidence} />
+                </CardContent>
+              </Card>
+            )}
+            
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (output?.risk_assessment) {
+                return (
+                  <Card className="card-hover">
+                    <CardContent className="pt-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Risk Level</p>
+                        <Badge variant={
+                          output.risk_assessment.risk_level === 'imminent' || output.risk_assessment.risk_level === 'high' ? 'destructive' :
+                          output.risk_assessment.risk_level === 'moderate' ? 'outline' :
+                          'default'
+                        } className="text-base">
+                          {output.risk_assessment.risk_level}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              return null;
+            })()}
 
-          <div className="space-y-6">
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (output?.speakers?.user) {
+                return (
+                  <Card className="card-hover">
+                    <CardContent className="pt-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Client Sentiment</p>
+                        <Badge variant="outline" className="text-base">
+                          {output.speakers.user.sentiment}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              return null;
+            })()}
+
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (output?.speakers?.support_worker) {
+                return (
+                  <Card className="card-hover">
+                    <CardContent className="pt-6">
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Supportiveness</p>
+                        <div className="text-2xl font-bold">
+                          {(output.speakers.support_worker.supportiveness * 100).toFixed(0)}%
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              return null;
+            })()}
+          </div>
+
+          {/* Main Content: Transcript and Summary */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2 card-hover">
+              <CardHeader>
+                <CardTitle className="text-xl">Transcript</CardTitle>
+                <CardDescription>
+                  {webhookResponse ? 'Auto-detected from webhook response' : 'Automatically generated from audio'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TranscriptViewer text={transcript.text} />
+              </CardContent>
+            </Card>
+
             <Card className="card-hover">
               <CardHeader>
                 <CardTitle className="text-lg">Summary</CardTitle>
@@ -263,7 +336,7 @@ const Upload = () => {
                 )}
 
                 {transcript.keyphrases.length > 0 && (
-                  <div>
+                  <div className="pt-4 border-t">
                     <h4 className="text-sm font-medium mb-2">Key Phrases</h4>
                     <div className="flex flex-wrap gap-2">
                       {transcript.keyphrases.map((phrase, idx) => (
@@ -275,225 +348,232 @@ const Upload = () => {
                   </div>
                 )}
 
-                {transcript.confidence > 0 && (
-                  <ConfidenceMeter confidence={transcript.confidence} />
+                {transcript.flags.length > 0 && (
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-2">Risk Flags</h4>
+                    <RiskFlags flags={transcript.flags} />
+                  </div>
                 )}
               </CardContent>
             </Card>
+          </div>
 
-            {transcript.flags.length > 0 && (
+          {/* Analysis Grid */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Speaker Analysis */}
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (!output?.speakers) return null;
+              
+              return (
+                <Card className="card-hover">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Speaker Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {output.speakers.user && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Client</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Sentiment:</span>
+                            <Badge variant="outline">{output.speakers.user.sentiment}</Badge>
+                          </div>
+                          {output.speakers.user.top_emotions && (
+                            <div>
+                              <span className="text-muted-foreground">Top Emotions:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {output.speakers.user.top_emotions.map((emotion: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {emotion}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {output.speakers.support_worker && (
+                      <div className="pt-3 border-t">
+                        <h4 className="text-sm font-medium mb-2">Support Worker</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Sentiment:</span>
+                            <Badge variant="outline">{output.speakers.support_worker.sentiment}</Badge>
+                          </div>
+                          {output.speakers.support_worker.top_emotions && (
+                            <div>
+                              <span className="text-muted-foreground">Top Emotions:</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {output.speakers.support_worker.top_emotions.map((emotion: string, idx: number) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {emotion}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Risk Assessment Details */}
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (!output?.risk_assessment) return null;
+              
+              return (
+                <Card className="card-hover">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Risk Assessment</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {output.risk_assessment.signals && output.risk_assessment.signals.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Warning Signals</h4>
+                        <ul className="space-y-1">
+                          {output.risk_assessment.signals.map((signal: string, idx: number) => (
+                            <li key={idx} className="text-sm text-muted-foreground flex gap-2">
+                              <span className="text-destructive">•</span>
+                              <span>{signal}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {output.risk_assessment.recommended_action && (
+                      <div className="pt-3 border-t">
+                        <h4 className="text-sm font-medium mb-2">Recommended Action</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {output.risk_assessment.recommended_action}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Metadata */}
+            {(() => {
+              const output = webhookResponse?.output || webhookResponse;
+              if (!output?.language && !output?.conversation_type && !output?.data_quality) return null;
+              
+              return (
+                <Card className="card-hover">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Metadata</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    {output.language && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Language:</span>
+                        <span className="font-medium">{output.language.toUpperCase()}</span>
+                      </div>
+                    )}
+                    {output.conversation_type && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Type:</span>
+                        <span className="font-medium">{output.conversation_type}</span>
+                      </div>
+                    )}
+                    {output.uncertainty !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Confidence:</span>
+                        <span className="font-medium">{((1 - output.uncertainty) * 100).toFixed(0)}%</span>
+                      </div>
+                    )}
+                    {output.data_quality && (
+                      <div className="pt-3 border-t">
+                        <p className="text-muted-foreground mb-2">Quality Indicators:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {output.data_quality.low_audio && <Badge variant="destructive">Low Audio</Badge>}
+                          {output.data_quality.translation_used && <Badge variant="secondary">Translated</Badge>}
+                          {output.data_quality.missing_timestamps && <Badge variant="outline">No Timestamps</Badge>}
+                          {output.data_quality.partial_transcript && <Badge variant="destructive">Partial</Badge>}
+                          {!output.data_quality.low_audio && !output.data_quality.translation_used && 
+                           !output.data_quality.missing_timestamps && !output.data_quality.partial_transcript && (
+                            <Badge variant="default">Good Quality</Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+          </div>
+
+          {/* Evidence Quotes - Full Width */}
+          {(() => {
+            const output = webhookResponse?.output || webhookResponse;
+            if (!output?.evidence || !Array.isArray(output.evidence) || output.evidence.length === 0) return null;
+            
+            return (
               <Card className="card-hover">
                 <CardHeader>
-                  <CardTitle className="text-lg">Risk Analysis</CardTitle>
+                  <CardTitle className="text-lg">Key Evidence</CardTitle>
+                  <CardDescription>Notable quotes from conversation</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <RiskFlags flags={transcript.flags} />
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {output.evidence.map((item: any, idx: number) => (
+                      <div key={idx} className="border-l-2 border-primary pl-4 py-2">
+                        <p className="text-sm italic text-muted-foreground mb-2">"{item.quote}"</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{item.speaker}</Badge>
+                          {item.timestamp_range && item.timestamp_range !== 'N/A' && (
+                            <span className="text-xs text-muted-foreground">{item.timestamp_range}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            );
+          })()}
 
-            {webhookResponse && (
-              <>
-                {/* Speaker Analysis */}
-                {(() => {
-                  const output = webhookResponse.output || webhookResponse;
-                  if (!output.speakers) return null;
-                  
-                  return (
-                    <Card className="card-hover">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Speaker Analysis</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {output.speakers.user && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">Client</h4>
-                            <div className="space-y-1 text-sm">
-                              <p><span className="font-medium">Sentiment:</span> <Badge variant="outline">{output.speakers.user.sentiment}</Badge></p>
-                              {output.speakers.user.top_emotions && (
-                                <p><span className="font-medium">Top Emotions:</span> {output.speakers.user.top_emotions.join(', ')}</p>
-                              )}
-                              {output.speakers.user.toxicity !== undefined && (
-                                <p><span className="font-medium">Toxicity:</span> {output.speakers.user.toxicity}</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {output.speakers.support_worker && (
-                          <div className="pt-2 border-t">
-                            <h4 className="text-sm font-medium mb-2">Support Worker</h4>
-                            <div className="space-y-1 text-sm">
-                              <p><span className="font-medium">Sentiment:</span> <Badge variant="outline">{output.speakers.support_worker.sentiment}</Badge></p>
-                              {output.speakers.support_worker.top_emotions && (
-                                <p><span className="font-medium">Top Emotions:</span> {output.speakers.support_worker.top_emotions.join(', ')}</p>
-                              )}
-                              {output.speakers.support_worker.supportiveness !== undefined && (
-                                <p><span className="font-medium">Supportiveness:</span> {(output.speakers.support_worker.supportiveness * 100).toFixed(0)}%</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
+          {/* Actions */}
+          <Card className="card-hover">
+            <CardHeader>
+              <CardTitle className="text-lg">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pii-mask">Anonymize PII</Label>
+                <Switch
+                  id="pii-mask"
+                  checked={piiMasked}
+                  onCheckedChange={setPiiMasked}
+                />
+              </div>
 
-                {/* Risk Assessment */}
-                {(() => {
-                  const output = webhookResponse.output || webhookResponse;
-                  if (!output.risk_assessment) return null;
-                  
-                  return (
-                    <Card className="card-hover">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Risk Assessment</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div>
-                          <span className="text-sm font-medium">Risk Level: </span>
-                          <Badge variant={
-                            output.risk_assessment.risk_level === 'imminent' || output.risk_assessment.risk_level === 'high' ? 'destructive' :
-                            output.risk_assessment.risk_level === 'moderate' ? 'outline' :
-                            'default'
-                          }>
-                            {output.risk_assessment.risk_level}
-                          </Badge>
-                        </div>
-                        {output.risk_assessment.signals && output.risk_assessment.signals.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-medium mb-2">Signals:</h4>
-                            <ul className="space-y-1">
-                              {output.risk_assessment.signals.map((signal: string, idx: number) => (
-                                <li key={idx} className="text-sm text-muted-foreground flex gap-2">
-                                  <span className="text-primary">•</span>
-                                  <span>{signal}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {output.risk_assessment.recommended_action && (
-                          <div className="pt-2 border-t">
-                            <p className="text-sm">
-                              <span className="font-medium">Recommended Action:</span><br />
-                              {output.risk_assessment.recommended_action}
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-
-                {/* Evidence Quotes */}
-                {(() => {
-                  const output = webhookResponse.output || webhookResponse;
-                  if (!output.evidence || !Array.isArray(output.evidence) || output.evidence.length === 0) return null;
-                  
-                  return (
-                    <Card className="card-hover">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Key Evidence</CardTitle>
-                        <CardDescription>Notable quotes from conversation</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {output.evidence.map((item: any, idx: number) => (
-                            <div key={idx} className="border-l-2 border-primary pl-3">
-                              <p className="text-sm italic text-muted-foreground">"{item.quote}"</p>
-                              <p className="text-xs mt-1">
-                                <Badge variant="outline" className="mr-2">{item.speaker}</Badge>
-                                {item.timestamp_range && item.timestamp_range !== 'N/A' && (
-                                  <span className="text-muted-foreground">{item.timestamp_range}</span>
-                                )}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-
-                {/* Conversation Metadata */}
-                {(() => {
-                  const output = webhookResponse.output || webhookResponse;
-                  if (!output.language && !output.conversation_type && !output.data_quality) return null;
-                  
-                  return (
-                    <Card className="card-hover">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Metadata</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2 text-sm">
-                        {output.language && (
-                          <p><span className="font-medium">Language:</span> {output.language.toUpperCase()}</p>
-                        )}
-                        {output.conversation_type && (
-                          <p><span className="font-medium">Type:</span> {output.conversation_type}</p>
-                        )}
-                        {output.data_quality && (
-                          <div className="pt-2 border-t">
-                            <p className="font-medium mb-1">Data Quality:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {output.data_quality.low_audio && <Badge variant="destructive">Low Audio</Badge>}
-                              {output.data_quality.translation_used && <Badge variant="secondary">Translation Used</Badge>}
-                              {output.data_quality.missing_timestamps && <Badge variant="outline">No Timestamps</Badge>}
-                              {output.data_quality.partial_transcript && <Badge variant="destructive">Partial</Badge>}
-                              {!output.data_quality.low_audio && !output.data_quality.translation_used && 
-                               !output.data_quality.missing_timestamps && !output.data_quality.partial_transcript && (
-                                <Badge variant="default">Good Quality</Badge>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {output.uncertainty !== undefined && (
-                          <p className="pt-2 border-t">
-                            <span className="font-medium">Confidence:</span> {((1 - output.uncertainty) * 100).toFixed(0)}%
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-              </>
-            )}
-
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="text-lg">Options</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="pii-mask">Anonymize PII</Label>
-                  <Switch
-                    id="pii-mask"
-                    checked={piiMasked}
-                    onCheckedChange={setPiiMasked}
-                  />
-                </div>
-
-                <div className="space-y-2 pt-4 border-t">
-                  <Button
-                    onClick={handleSendToCases}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send to Similar Cases
-                  </Button>
-                  <Button
-                    onClick={handleAddToNotes}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Add to SOAP Notes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="grid gap-3 sm:grid-cols-2 pt-4 border-t">
+                <Button
+                  onClick={handleSendToCases}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send to Similar Cases
+                </Button>
+                <Button
+                  onClick={handleAddToNotes}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Add to SOAP Notes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
