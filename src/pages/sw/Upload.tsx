@@ -243,10 +243,9 @@ const Upload = () => {
             </Label>
             <Select value={selectedClientId} onValueChange={setSelectedClientId}>
               <SelectTrigger id="client-select">
-                <SelectValue placeholder="Select a client..." />
+                <SelectValue placeholder="No client selected" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No client selected</SelectItem>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     {client.name}
