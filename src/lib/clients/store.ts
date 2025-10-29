@@ -9,6 +9,7 @@ export interface Client {
   gender: string;
   contact: string;
   notes: string;
+  analysisNotes?: string;
   riskLevel: RiskLevel;
   assignedWorker: string;
   createdAt: string;
@@ -37,6 +38,7 @@ class ClientStore {
       gender: row.gender,
       contact: row.contact,
       notes: row.notes || '',
+      analysisNotes: row.analysis_notes || '',
       riskLevel: row.risk_level as RiskLevel,
       assignedWorker: row.assigned_worker,
       createdAt: row.created_at,
@@ -63,6 +65,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
+      analysisNotes: data.analysis_notes || '',
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,
@@ -116,6 +119,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
+      analysisNotes: data.analysis_notes || '',
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,
@@ -131,6 +135,7 @@ class ClientStore {
     if (updates.gender !== undefined) updateData.gender = updates.gender;
     if (updates.contact !== undefined) updateData.contact = updates.contact;
     if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.analysisNotes !== undefined) updateData.analysis_notes = updates.analysisNotes;
     if (updates.riskLevel !== undefined) updateData.risk_level = updates.riskLevel;
     if (updates.assignedWorker !== undefined) updateData.assigned_worker = updates.assignedWorker;
 
@@ -153,6 +158,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
+      analysisNotes: data.analysis_notes || '',
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,

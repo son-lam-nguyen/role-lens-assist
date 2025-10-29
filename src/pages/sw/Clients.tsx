@@ -32,11 +32,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Mic } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Mic, ChevronDown } from "lucide-react";
 import { clientStore, type Client, type RiskLevel } from "@/lib/clients/store";
 import { recordingsStore, type Recording } from "@/lib/recordings/store";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -450,12 +451,12 @@ const Clients = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">Comments</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes about the client..."
+                placeholder="Additional comments about the client..."
                 rows={4}
               />
             </div>
@@ -548,10 +549,25 @@ const Clients = () => {
 
               {viewingClient.notes && (
                 <div>
-                  <Label className="text-muted-foreground">Notes</Label>
+                  <Label className="text-muted-foreground">Comments</Label>
                   <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingClient.notes}</p>
                 </div>
               )}
+
+              <Collapsible className="space-y-2">
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-muted rounded-md hover:bg-muted/80 transition-colors">
+                  <Label className="text-muted-foreground cursor-pointer">Notes (Analysis History)</Label>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <Textarea
+                    value={viewingClient.analysisNotes || 'No analysis notes yet.'}
+                    readOnly
+                    rows={8}
+                    className="resize-none text-sm"
+                  />
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           )}
 

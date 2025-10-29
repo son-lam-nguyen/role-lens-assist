@@ -133,6 +133,21 @@ const Upload = () => {
         });
       }
       
+      // Append analysis results to client's notes
+      if (selectedClientId && parsedTranscript) {
+        const client = await clientStore.getById(selectedClientId);
+        if (client) {
+          const analysisEntry = formatAnalysisEntry(parsedTranscript, webhookResult);
+          const updatedAnalysisNotes = client.analysisNotes 
+            ? `${client.analysisNotes}\n\n${analysisEntry}` 
+            : analysisEntry;
+          
+          await clientStore.update(selectedClientId, {
+            analysisNotes: updatedAnalysisNotes
+          });
+        }
+      }
+      
       toast.success("Audio processed and saved successfully!");
     } catch (error) {
       console.error('Webhook error:', error);
@@ -196,6 +211,67 @@ const Upload = () => {
       flags,
       piiMasked: true
     };
+  };
+
+  // Format analysis results for client notes
+  const formatAnalysisEntry = (transcript: Transcript, webhookData: any): string => {
+    const output = webhookData?.output || webhookData;
+    const date = new Date().toLocaleString();
+    
+    let entry = `═══════════════════════════════════════\n`;
+    entry += `📊 ANALYSIS: ${transcript.title}\n`;
+    entry += `📅 Date: ${date}\n`;
+    entry += `⏱️ Duration: ${Math.floor(transcript.durationSec / 60)}m ${Math.floor(transcript.durationSec % 60)}s\n`;
+    entry += `═══════════════════════════════════════\n\n`;
+
+    // Risk Assessment
+    if (output?.risk_assessment) {
+      entry += `🚨 RISK ASSESSMENT:\n`;
+      entry += `   Level: ${output.risk_assessment.risk_level || 'Unknown'}\n`;
+      if (output.risk_assessment.signals && Array.isArray(output.risk_assessment.signals)) {
+        entry += `   Signals: ${output.risk_assessment.signals.join(', ')}\n`;
+      }
+      entry += `\n`;
+    }
+
+    // Summary
+    if (transcript.tldr.length > 0) {
+      entry += `📝 SUMMARY:\n`;
+      transcript.tldr.forEach(point => {
+        entry += `   • ${point}\n`;
+      });
+      entry += `\n`;
+    }
+
+    // Key Phrases
+    if (transcript.keyphrases.length > 0) {
+      entry += `🔑 KEY PHRASES:\n   ${transcript.keyphrases.join(', ')}\n\n`;
+    }
+
+    // Speaker Analysis
+    if (output?.speakers) {
+      entry += `👥 SPEAKER ANALYSIS:\n`;
+      if (output.speakers.user) {
+        entry += `   Client:\n`;
+        entry += `   • Sentiment: ${output.speakers.user.sentiment || 'N/A'}\n`;
+        if (output.speakers.user.top_emotions) {
+          entry += `   • Emotions: ${output.speakers.user.top_emotions.join(', ')}\n`;
+        }
+      }
+      if (output.speakers.support_worker) {
+        entry += `   Support Worker:\n`;
+        entry += `   • Sentiment: ${output.speakers.support_worker.sentiment || 'N/A'}\n`;
+        entry += `   • Supportiveness: ${(output.speakers.support_worker.supportiveness * 100).toFixed(0)}%\n`;
+      }
+      entry += `\n`;
+    }
+
+    // Confidence Score
+    if (transcript.confidence > 0) {
+      entry += `✓ Confidence: ${(transcript.confidence * 100).toFixed(0)}%\n\n`;
+    }
+
+    return entry;
   };
 
   const handleFileSelect = (file: File) => {
