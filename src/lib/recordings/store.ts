@@ -64,19 +64,46 @@ export const recordingsStore = {
       .replace(/[^\w\s.-]/g, '') // Remove special chars except word chars, spaces, dots, hyphens
       .replace(/\s+/g, '_') // Replace spaces with underscores
       .replace(/_{2,}/g, '_'); // Replace multiple underscores with single
-    
-    const fileName = `${user.id}/${Date.now()}_${sanitizedName}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from('recordings')
-      .upload(fileName, recording.blob, {
-        contentType: recording.mime || 'audio/webm',
-        upsert: false,
-      });
 
-    if (uploadError) {
-      console.error('Error uploading recording:', uploadError);
-      return null;
+    // Build a more robust ASCII-only fallback
+    const asciiName = sanitizedName
+      .normalize('NFKD')
+      .replace(/[^\w\s.-]/g, '')
+      .replace(/[^\x20-\x7E]/g, '') // Remove non-ASCII
+      .replace(/\s+/g, '_')
+      .replace(/_{2,}/g, '_')
+      .slice(0, 200);
+
+    let finalFileName = `${user.id}/${Date.now()}_${sanitizedName}`;
+
+    // Try upload, then retry once with stricter ASCII-only name if needed
+    let uploadErr: any = null;
+    try {
+      const { error } = await supabase.storage
+        .from('recordings')
+        .upload(finalFileName, recording.blob, {
+          contentType: recording.mime || 'audio/webm',
+          upsert: false,
+        });
+      uploadErr = error;
+    } catch (e) {
+      uploadErr = e as any;
+    }
+
+    if (uploadErr) {
+      console.error('Initial upload failed, retrying with ASCII name:', uploadErr);
+      finalFileName = `${user.id}/${Date.now()}_${asciiName}`;
+      const { error: retryError } = await supabase.storage
+        .from('recordings')
+        .upload(finalFileName, recording.blob, {
+          contentType: recording.mime || 'audio/webm',
+          upsert: false,
+        });
+
+      if (retryError) {
+        console.error('Error uploading recording (retry):', retryError);
+        return null;
+      }
     }
 
     const { data, error } = await supabase
@@ -85,7 +112,7 @@ export const recordingsStore = {
         user_id: user.id,
         name: recording.name,
         duration: recording.duration,
-        storage_path: fileName,
+        storage_path: finalFileName,
         mime_type: recording.mime,
         file_extension: recording.ext,
         file_size: recording.bytes,
@@ -101,7 +128,7 @@ export const recordingsStore = {
 
     const { data: urlData } = await supabase.storage
       .from('recordings')
-      .createSignedUrl(fileName, 3600);
+      .createSignedUrl(finalFileName, 3600);
 
     return {
       id: data.id,
