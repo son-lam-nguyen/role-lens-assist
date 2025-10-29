@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Mic, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Mic, ChevronDown, FileText } from "lucide-react";
 import { clientStore, type Client, type RiskLevel } from "@/lib/clients/store";
 import { recordingsStore, type Recording } from "@/lib/recordings/store";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
@@ -51,6 +51,8 @@ const Clients = () => {
   const [selectedClientForRecording, setSelectedClientForRecording] = useState<string>("");
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
+  const [analysisDetailOpen, setAnalysisDetailOpen] = useState(false);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -560,12 +562,30 @@ const Clients = () => {
                   <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <Textarea
-                    value={viewingClient.analysisNotes || 'No analysis notes yet.'}
-                    readOnly
-                    rows={8}
-                    className="resize-none text-sm"
-                  />
+                  <div className="space-y-2 mt-2">
+                    {viewingClient.analysisNotes && Array.isArray(viewingClient.analysisNotes) && viewingClient.analysisNotes.length > 0 ? (
+                      viewingClient.analysisNotes.map((analysis: any) => (
+                        <button
+                          key={analysis.id}
+                          onClick={() => {
+                            setSelectedAnalysis(analysis);
+                            setAnalysisDetailOpen(true);
+                          }}
+                          className="w-full p-3 bg-muted hover:bg-muted/80 rounded-md text-left transition-colors flex items-start gap-3"
+                        >
+                          <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{analysis.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(analysis.date).toLocaleString()}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground p-3">No analysis notes yet.</p>
+                    )}
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
             </div>
@@ -578,6 +598,123 @@ const Clients = () => {
             <Button onClick={handleEditFromDetails}>
               <Pencil className="w-4 h-4 mr-2" />
               Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Analysis Detail Dialog */}
+      <Dialog open={analysisDetailOpen} onOpenChange={setAnalysisDetailOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Analysis Details</DialogTitle>
+            <DialogDescription>
+              Complete analysis information
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAnalysis && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Title</Label>
+                  <p className="text-lg font-medium">{selectedAnalysis.title}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Date</Label>
+                  <p className="text-lg font-medium">{new Date(selectedAnalysis.date).toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Duration</Label>
+                <p className="text-lg font-medium">
+                  {Math.floor(selectedAnalysis.duration / 60)}m {Math.floor(selectedAnalysis.duration % 60)}s
+                </p>
+              </div>
+
+              {selectedAnalysis.riskAssessment && (
+                <div>
+                  <Label className="text-muted-foreground">Risk Assessment</Label>
+                  <div className="mt-2 p-3 bg-muted rounded-md space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Level:</span>
+                      <Badge variant={
+                        selectedAnalysis.riskAssessment.level === 'high' ? 'destructive' :
+                        selectedAnalysis.riskAssessment.level === 'moderate' ? 'default' : 'secondary'
+                      }>
+                        {selectedAnalysis.riskAssessment.level}
+                      </Badge>
+                    </div>
+                    {selectedAnalysis.riskAssessment.signals.length > 0 && (
+                      <div>
+                        <span className="text-sm font-medium">Signals:</span>
+                        <p className="text-sm mt-1">{selectedAnalysis.riskAssessment.signals.join(', ')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedAnalysis.summary && selectedAnalysis.summary.length > 0 && (
+                <div>
+                  <Label className="text-muted-foreground">Summary</Label>
+                  <ul className="mt-2 space-y-1 p-3 bg-muted rounded-md">
+                    {selectedAnalysis.summary.map((point: string, idx: number) => (
+                      <li key={idx} className="text-sm flex gap-2">
+                        <span>•</span>
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedAnalysis.keyPhrases && selectedAnalysis.keyPhrases.length > 0 && (
+                <div>
+                  <Label className="text-muted-foreground">Key Phrases</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedAnalysis.keyPhrases.map((phrase: string, idx: number) => (
+                      <Badge key={idx} variant="outline">{phrase}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedAnalysis.speakerAnalysis && (
+                <div>
+                  <Label className="text-muted-foreground">Speaker Analysis</Label>
+                  <div className="mt-2 space-y-3 p-3 bg-muted rounded-md">
+                    {selectedAnalysis.speakerAnalysis.client && (
+                      <div>
+                        <p className="text-sm font-medium mb-1">Client:</p>
+                        <p className="text-sm">Sentiment: {selectedAnalysis.speakerAnalysis.client.sentiment}</p>
+                        {selectedAnalysis.speakerAnalysis.client.topEmotions.length > 0 && (
+                          <p className="text-sm">Emotions: {selectedAnalysis.speakerAnalysis.client.topEmotions.join(', ')}</p>
+                        )}
+                      </div>
+                    )}
+                    {selectedAnalysis.speakerAnalysis.supportWorker && (
+                      <div>
+                        <p className="text-sm font-medium mb-1">Support Worker:</p>
+                        <p className="text-sm">Sentiment: {selectedAnalysis.speakerAnalysis.supportWorker.sentiment}</p>
+                        <p className="text-sm">Supportiveness: {(selectedAnalysis.speakerAnalysis.supportWorker.supportiveness * 100).toFixed(0)}%</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label className="text-muted-foreground">Confidence Score</Label>
+                <p className="text-lg font-medium">{(selectedAnalysis.confidence * 100).toFixed(0)}%</p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAnalysisDetailOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -2,6 +2,30 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type RiskLevel = 'low' | 'moderate' | 'high';
 
+export interface AnalysisEntry {
+  id: string;
+  title: string;
+  date: string;
+  duration: number;
+  riskAssessment?: {
+    level: string;
+    signals: string[];
+  };
+  summary: string[];
+  keyPhrases: string[];
+  speakerAnalysis?: {
+    client?: {
+      sentiment: string;
+      topEmotions: string[];
+    };
+    supportWorker?: {
+      sentiment: string;
+      supportiveness: number;
+    };
+  };
+  confidence: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -9,7 +33,7 @@ export interface Client {
   gender: string;
   contact: string;
   notes: string;
-  analysisNotes?: string;
+  analysisNotes?: AnalysisEntry[];
   riskLevel: RiskLevel;
   assignedWorker: string;
   createdAt: string;
@@ -38,7 +62,7 @@ class ClientStore {
       gender: row.gender,
       contact: row.contact,
       notes: row.notes || '',
-      analysisNotes: row.analysis_notes || '',
+      analysisNotes: Array.isArray(row.analysis_notes) ? row.analysis_notes as unknown as AnalysisEntry[] : [],
       riskLevel: row.risk_level as RiskLevel,
       assignedWorker: row.assigned_worker,
       createdAt: row.created_at,
@@ -65,7 +89,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
-      analysisNotes: data.analysis_notes || '',
+      analysisNotes: Array.isArray(data.analysis_notes) ? data.analysis_notes as unknown as AnalysisEntry[] : [],
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,
@@ -119,7 +143,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
-      analysisNotes: data.analysis_notes || '',
+      analysisNotes: Array.isArray(data.analysis_notes) ? data.analysis_notes as unknown as AnalysisEntry[] : [],
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,
@@ -158,7 +182,7 @@ class ClientStore {
       gender: data.gender,
       contact: data.contact,
       notes: data.notes || '',
-      analysisNotes: data.analysis_notes || '',
+      analysisNotes: Array.isArray(data.analysis_notes) ? data.analysis_notes as unknown as AnalysisEntry[] : [],
       riskLevel: data.risk_level as RiskLevel,
       assignedWorker: data.assigned_worker,
       createdAt: data.created_at,

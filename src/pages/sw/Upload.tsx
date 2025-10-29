@@ -138,9 +138,8 @@ const Upload = () => {
         const client = await clientStore.getById(selectedClientId);
         if (client) {
           const analysisEntry = formatAnalysisEntry(parsedTranscript, webhookResult);
-          const updatedAnalysisNotes = client.analysisNotes 
-            ? `${client.analysisNotes}\n\n${analysisEntry}` 
-            : analysisEntry;
+          const currentAnalyses = Array.isArray(client.analysisNotes) ? client.analysisNotes : [];
+          const updatedAnalysisNotes = [...currentAnalyses, analysisEntry];
           
           await clientStore.update(selectedClientId, {
             analysisNotes: updatedAnalysisNotes
@@ -214,64 +213,32 @@ const Upload = () => {
   };
 
   // Format analysis results for client notes
-  const formatAnalysisEntry = (transcript: Transcript, webhookData: any): string => {
+  const formatAnalysisEntry = (transcript: Transcript, webhookData: any) => {
     const output = webhookData?.output || webhookData;
-    const date = new Date().toLocaleString();
     
-    let entry = `═══════════════════════════════════════\n`;
-    entry += `📊 ANALYSIS: ${transcript.title}\n`;
-    entry += `📅 Date: ${date}\n`;
-    entry += `⏱️ Duration: ${Math.floor(transcript.durationSec / 60)}m ${Math.floor(transcript.durationSec % 60)}s\n`;
-    entry += `═══════════════════════════════════════\n\n`;
-
-    // Risk Assessment
-    if (output?.risk_assessment) {
-      entry += `🚨 RISK ASSESSMENT:\n`;
-      entry += `   Level: ${output.risk_assessment.risk_level || 'Unknown'}\n`;
-      if (output.risk_assessment.signals && Array.isArray(output.risk_assessment.signals)) {
-        entry += `   Signals: ${output.risk_assessment.signals.join(', ')}\n`;
-      }
-      entry += `\n`;
-    }
-
-    // Summary
-    if (transcript.tldr.length > 0) {
-      entry += `📝 SUMMARY:\n`;
-      transcript.tldr.forEach(point => {
-        entry += `   • ${point}\n`;
-      });
-      entry += `\n`;
-    }
-
-    // Key Phrases
-    if (transcript.keyphrases.length > 0) {
-      entry += `🔑 KEY PHRASES:\n   ${transcript.keyphrases.join(', ')}\n\n`;
-    }
-
-    // Speaker Analysis
-    if (output?.speakers) {
-      entry += `👥 SPEAKER ANALYSIS:\n`;
-      if (output.speakers.user) {
-        entry += `   Client:\n`;
-        entry += `   • Sentiment: ${output.speakers.user.sentiment || 'N/A'}\n`;
-        if (output.speakers.user.top_emotions) {
-          entry += `   • Emotions: ${output.speakers.user.top_emotions.join(', ')}\n`;
-        }
-      }
-      if (output.speakers.support_worker) {
-        entry += `   Support Worker:\n`;
-        entry += `   • Sentiment: ${output.speakers.support_worker.sentiment || 'N/A'}\n`;
-        entry += `   • Supportiveness: ${(output.speakers.support_worker.supportiveness * 100).toFixed(0)}%\n`;
-      }
-      entry += `\n`;
-    }
-
-    // Confidence Score
-    if (transcript.confidence > 0) {
-      entry += `✓ Confidence: ${(transcript.confidence * 100).toFixed(0)}%\n\n`;
-    }
-
-    return entry;
+    return {
+      id: crypto.randomUUID(),
+      title: transcript.title,
+      date: new Date().toISOString(),
+      duration: transcript.durationSec,
+      riskAssessment: output?.risk_assessment ? {
+        level: output.risk_assessment.risk_level || 'Unknown',
+        signals: output.risk_assessment.signals || []
+      } : undefined,
+      summary: transcript.tldr,
+      keyPhrases: transcript.keyphrases,
+      speakerAnalysis: output?.speakers ? {
+        client: output.speakers.user ? {
+          sentiment: output.speakers.user.sentiment || 'N/A',
+          topEmotions: output.speakers.user.top_emotions || []
+        } : undefined,
+        supportWorker: output.speakers.support_worker ? {
+          sentiment: output.speakers.support_worker.sentiment || 'N/A',
+          supportiveness: output.speakers.support_worker.supportiveness || 0
+        } : undefined
+      } : undefined,
+      confidence: transcript.confidence
+    };
   };
 
   const handleFileSelect = (file: File) => {

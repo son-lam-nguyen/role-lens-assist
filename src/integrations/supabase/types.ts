@@ -59,7 +59,7 @@ export type Database = {
       clients: {
         Row: {
           age: number
-          analysis_notes: string | null
+          analysis_notes: Json | null
           assigned_worker: string
           contact: string
           created_at: string
@@ -73,7 +73,7 @@ export type Database = {
         }
         Insert: {
           age: number
-          analysis_notes?: string | null
+          analysis_notes?: Json | null
           assigned_worker: string
           contact: string
           created_at?: string
@@ -87,7 +87,7 @@ export type Database = {
         }
         Update: {
           age?: number
-          analysis_notes?: string | null
+          analysis_notes?: Json | null
           assigned_worker?: string
           contact?: string
           created_at?: string
