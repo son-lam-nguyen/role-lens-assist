@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { mockUsers, MockUser } from "@/lib/mock/mockUsers";
+import { userStore } from "@/lib/users/userStore";
 
 interface AuthUser {
   username: string;
@@ -102,18 +102,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    const foundUser = mockUsers.find(
-      (u) => u.username === username && u.password === password
-    );
+    const foundUser = userStore.getByUsername(username);
 
-    if (!foundUser) {
+    if (!foundUser || foundUser.password !== password) {
       return { success: false, error: "Invalid username or password" };
+    }
+
+    if (!foundUser.active) {
+      return { success: false, error: "Account is deactivated" };
     }
 
     const authUser: AuthUser = {
       username: foundUser.username,
       role: foundUser.role,
-      displayName: foundUser.displayName,
+      displayName: foundUser.name,
     };
 
     setUser(authUser);
