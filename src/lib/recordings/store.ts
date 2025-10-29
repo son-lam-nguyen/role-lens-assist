@@ -59,7 +59,13 @@ export const recordingsStore = {
       return null;
     }
 
-    const fileName = `${user.id}/${Date.now()}_${recording.name}`;
+    // Sanitize filename to avoid special characters that might cause storage errors
+    const sanitizedName = recording.name
+      .replace(/[^\w\s.-]/g, '') // Remove special chars except word chars, spaces, dots, hyphens
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/_{2,}/g, '_'); // Replace multiple underscores with single
+    
+    const fileName = `${user.id}/${Date.now()}_${sanitizedName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('recordings')
