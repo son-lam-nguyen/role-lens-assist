@@ -53,6 +53,8 @@ const Clients = () => {
   const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const [analysisDetailOpen, setAnalysisDetailOpen] = useState(false);
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
+  const [deleteAnalysisDialogOpen, setDeleteAnalysisDialogOpen] = useState(false);
+  const [analysisToDelete, setAnalysisToDelete] = useState<{ clientId: string; analysisId: string } | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -235,6 +237,34 @@ const Clients = () => {
     }
     setDeleteDialogOpen(false);
     setClientToDelete(null);
+  };
+
+  const handleDeleteAnalysisClick = (clientId: string, analysisId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAnalysisToDelete({ clientId, analysisId });
+    setDeleteAnalysisDialogOpen(true);
+  };
+
+  const handleDeleteAnalysisConfirm = async () => {
+    if (analysisToDelete) {
+      const client = await clientStore.getById(analysisToDelete.clientId);
+      if (client && Array.isArray(client.analysisNotes)) {
+        const updatedNotes = client.analysisNotes.filter((a: any) => a.id !== analysisToDelete.analysisId);
+        await clientStore.update(client.id, { analysisNotes: updatedNotes });
+        
+        if (viewingClient?.id === client.id) {
+          setViewingClient({ ...client, analysisNotes: updatedNotes });
+        }
+        
+        await loadClients();
+        toast({
+          title: "Analysis Deleted",
+          description: "The analysis entry has been removed.",
+        });
+      }
+    }
+    setDeleteAnalysisDialogOpen(false);
+    setAnalysisToDelete(null);
   };
 
   const getRiskBadgeVariant = (risk: RiskLevel) => {
@@ -565,22 +595,35 @@ const Clients = () => {
                   <div className="space-y-2 mt-2">
                     {viewingClient.analysisNotes && Array.isArray(viewingClient.analysisNotes) && viewingClient.analysisNotes.length > 0 ? (
                       viewingClient.analysisNotes.map((analysis: any) => (
-                        <button
+                        <div
                           key={analysis.id}
-                          onClick={() => {
-                            setSelectedAnalysis(analysis);
-                            setAnalysisDetailOpen(true);
-                          }}
-                          className="w-full p-3 bg-muted hover:bg-muted/80 rounded-md text-left transition-colors flex items-start gap-3"
+                          className="w-full p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors flex items-start gap-3"
                         >
-                          <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{analysis.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(analysis.date).toLocaleString()}
-                            </p>
-                          </div>
-                        </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAnalysis(analysis);
+                              setAnalysisDetailOpen(true);
+                            }}
+                            className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                          >
+                            <FileText className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm">{analysis.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(analysis.date).toLocaleString()}
+                              </p>
+                            </div>
+                          </button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={(e) => handleDeleteAnalysisClick(viewingClient.id, analysis.id, e)}
+                            aria-label="Delete analysis"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       ))
                     ) : (
                       <p className="text-sm text-muted-foreground p-3">No analysis notes yet.</p>
@@ -719,6 +762,23 @@ const Clients = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteAnalysisDialogOpen} onOpenChange={setDeleteAnalysisDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Analysis</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this analysis entry? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAnalysisConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <RecorderModal 
         open={recorderOpen} 
