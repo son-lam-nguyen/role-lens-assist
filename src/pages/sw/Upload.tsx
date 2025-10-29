@@ -14,6 +14,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { FileText, Send, AlertCircle } from "lucide-react";
 import { recordingsStore } from "@/lib/recordings/store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { clientStore, Client } from "@/lib/clients/store";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -25,6 +27,17 @@ const Upload = () => {
   const [webhookResponse, setWebhookResponse] = useState<any>(null);
   const [piiMasked, setPiiMasked] = useState(true);
   const [recordingDuration, setRecordingDuration] = useState<number | undefined>(undefined);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clients, setClients] = useState<Client[]>([]);
+
+  // Load clients on mount
+  useEffect(() => {
+    const loadClients = async () => {
+      const clientList = await clientStore.listAll();
+      setClients(clientList);
+    };
+    loadClients();
+  }, []);
 
   // Handle importing recording from the recordings page or recorder modal
   useEffect(() => {
@@ -104,7 +117,23 @@ const Upload = () => {
       
       setProgress(100);
       setTranscript(parsedTranscript);
-      toast.success("Audio processed successfully!");
+      
+      // Save recording to recordings store with client link
+      if (file) {
+        const audioDuration = recordingDuration || 0;
+        await recordingsStore.add({
+          name: file.name,
+          blob: file,
+          duration: audioDuration,
+          url: '',
+          mime: file.type,
+          ext: file.name.split('.').pop(),
+          bytes: file.size,
+          clientId: selectedClientId || undefined,
+        });
+      }
+      
+      toast.success("Audio processed and saved successfully!");
     } catch (error) {
       console.error('Webhook error:', error);
       toast.error("Failed to process audio");
@@ -207,7 +236,26 @@ const Upload = () => {
             Select an audio file (WAV, MP3, M4A) to transcribe and analyze
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="client-select" className="mb-2 block">
+              Select Client (Optional)
+            </Label>
+            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+              <SelectTrigger id="client-select">
+                <SelectValue placeholder="Select a client..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No client selected</SelectItem>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <FileDropzone
             onFileSelect={handleFileSelect}
             onProcess={handleProcess}
