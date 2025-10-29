@@ -182,7 +182,6 @@ const Recordings = () => {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Created</TableHead>
-                    <TableHead>Duration</TableHead>
                     <TableHead>Format / Size</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -199,11 +198,6 @@ const Recordings = () => {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {formatDuration(recording.duration)}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
