@@ -48,6 +48,8 @@ const Clients = () => {
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
   const [recorderOpen, setRecorderOpen] = useState(false);
   const [selectedClientForRecording, setSelectedClientForRecording] = useState<string>("");
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [viewingClient, setViewingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -88,6 +90,18 @@ const Clients = () => {
   const handleRecordForClient = (clientId: string) => {
     setSelectedClientForRecording(clientId);
     setRecorderOpen(true);
+  };
+
+  const handleViewDetails = (client: Client) => {
+    setViewingClient(client);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleEditFromDetails = () => {
+    if (viewingClient) {
+      setDetailsDialogOpen(false);
+      handleEdit(viewingClient);
+    }
   };
 
   const handleAdd = () => {
@@ -289,7 +303,14 @@ const Clients = () => {
               ) : (
                 filteredClients.map((client) => (
                   <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => handleViewDetails(client)}
+                        className="text-primary hover:underline cursor-pointer"
+                      >
+                        {client.name}
+                      </button>
+                    </TableCell>
                     <TableCell>{client.age}</TableCell>
                     <TableCell>{client.gender || '—'}</TableCell>
                     <TableCell>{client.contact}</TableCell>
@@ -467,6 +488,84 @@ const Clients = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Client Details</DialogTitle>
+            <DialogDescription>
+              View complete information for this client
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingClient && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Name</Label>
+                  <p className="text-lg font-medium">{viewingClient.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Age</Label>
+                  <p className="text-lg font-medium">{viewingClient.age}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Gender</Label>
+                  <p className="text-lg font-medium">{viewingClient.gender || '—'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Contact</Label>
+                  <p className="text-lg font-medium">{viewingClient.contact}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Risk Level</Label>
+                  <div className="mt-1">
+                    <Badge variant={getRiskBadgeVariant(viewingClient.riskLevel)} className="capitalize">
+                      {viewingClient.riskLevel}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Assigned Worker</Label>
+                  <p className="text-lg font-medium">{viewingClient.assignedWorker || '—'}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground">Recordings</Label>
+                <div className="mt-1">
+                  <Badge variant="secondary">
+                    {getClientRecordings(viewingClient.id).length} recording(s)
+                  </Badge>
+                </div>
+              </div>
+
+              {viewingClient.notes && (
+                <div>
+                  <Label className="text-muted-foreground">Notes</Label>
+                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">{viewingClient.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={handleEditFromDetails}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <RecorderModal 
         open={recorderOpen} 
