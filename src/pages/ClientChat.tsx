@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Navbar } from "@/components/supportlens/Navbar";
 import { CrisisBanner } from "@/components/supportlens/CrisisBanner";
 import { ChatMessage, generateChatbotResponse, quickReplies, detectCrisis } from "@/lib/mock/mockChatbot";
@@ -13,7 +14,7 @@ import { mockPsychoedSnippets } from "@/lib/mock/mockPsychoed";
 import { crisisContactsAU } from "@/lib/mock/mockSettings";
 import { conversationStore, messageStore, Message } from "@/lib/messages/store";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Bot, User, Library, Phone, Mic, Square, MessageSquare, X } from "lucide-react";
+import { Send, Bot, User, Library, Phone, Mic, Square, MessageSquare, X, ChevronDown, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const ClientChat = () => {
@@ -40,6 +41,8 @@ const ClientChat = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const sessionIdRef = useRef<string>("");
   const previousMessageCountRef = useRef(0);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   // Initialize or retrieve session ID
   useEffect(() => {
@@ -489,123 +492,127 @@ const ClientChat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-accent/5">
       <Navbar />
 
-      <main className="container mx-auto px-4 pt-24 pb-8">
-        <div className="max-w-6xl mx-auto fade-in">
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold mb-2">Client Support Portal</h1>
-            <p className="text-muted-foreground text-lg">
-              Safe, AI-guided access to mental health information and coping strategies
+      <main className="container mx-auto px-3 sm:px-6 pt-20 pb-32 md:pb-8">
+        <div className="max-w-4xl mx-auto fade-in">
+          {/* Mobile-optimized header */}
+          <div className="mb-4 md:mb-6 px-1">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 md:mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Support Portal
+            </h1>
+            <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
+              Safe, empathetic mental health support
             </p>
           </div>
 
           {showCrisisBanner && (
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <CrisisBanner onShowContacts={() => setShowContacts(true)} />
             </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-4">
-            <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] card-hover">
-              <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        {humanSupportMode ? <MessageSquare className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">
-                          {humanSupportMode ? "Support Worker Chat" : "Mental Health Support Chat"}
-                        </CardTitle>
-                        <CardDescription>
-                          {humanSupportMode ? "Connected with human support" : "Ask questions, learn coping strategies, and access resources"}
-                        </CardDescription>
-                      </div>
+          {/* Main chat card - mobile first */}
+          <div className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-220px)]">
+            <Card className="flex flex-col flex-1 overflow-hidden shadow-lg border-2">
+              {/* Compact header */}
+              <CardHeader className="pb-3 px-4 md:px-6 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border-b">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 shadow-md">
+                      {humanSupportMode ? <MessageSquare className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {!humanSupportMode && (
-                        <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading}>
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          Talk to Support Worker
-                        </Button>
-                      )}
-                      {humanSupportMode && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <X className="w-4 h-4 mr-2" />
-                              Close Chat
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>End chat and return to AI assistant?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will close your conversation with the support worker. You can start a new conversation anytime.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleCloseHumanSupport}>
-                                End Chat
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-base md:text-lg leading-tight truncate">
+                        {humanSupportMode ? "Support Worker" : "AI Assistant"}
+                      </CardTitle>
+                      <CardDescription className="text-xs md:text-sm mt-0.5 line-clamp-1">
+                        {humanSupportMode ? "Human support" : "Here to help"}
+                      </CardDescription>
                     </div>
                   </div>
+                  <div className="shrink-0">
+                    {!humanSupportMode && (
+                      <Button 
+                        variant="outline" 
+                        onClick={requestHumanSupport} 
+                        disabled={isLoading}
+                        className="h-9 text-xs md:text-sm px-3 md:px-4 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                        <span className="hidden sm:inline">Talk to </span>Worker
+                      </Button>
+                    )}
+                    {humanSupportMode && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9 text-xs shadow-sm">
+                            <X className="w-3.5 h-3.5 mr-1" />
+                            <span className="hidden sm:inline">Close</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-md">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>End chat with support worker?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Return to AI assistant. You can start a new conversation anytime.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCloseHumanSupport}>
+                              End Chat
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden">
-                <ScrollArea ref={scrollRef} className="flex-1 pr-4">
-                  <div className="space-y-4">
+              {/* Messages area */}
+              <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+                <ScrollArea ref={scrollRef} className="flex-1 px-3 md:px-6 py-4">
+                  <div className="space-y-3 md:space-y-4">
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                        className={`flex gap-2 md:gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         {message.role === "assistant" && (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Bot className="w-5 h-5 text-primary" />
+                          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+                            <Bot className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                           </div>
                         )}
                         <div
-                          className={`rounded-2xl px-4 py-3 max-w-[80%] ${
-                            message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                          className={`rounded-3xl px-4 py-3 shadow-sm ${
+                            message.role === "user" 
+                              ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground max-w-[85%] md:max-w-[75%]" 
+                              : "bg-gradient-to-br from-muted to-muted/80 max-w-[85%] md:max-w-[75%]"
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                          <p className="text-xs opacity-70 mt-2">{new Date(message.timestamp).toLocaleTimeString()}</p>
+                          <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                          <p className="text-xs opacity-60 mt-1.5">{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                         {message.role === "user" && (
-                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                            <User className="w-5 h-5 text-accent" />
+                          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center shrink-0 shadow-sm">
+                            <User className="w-4 h-4 md:w-5 md:h-5 text-accent" />
                           </div>
                         )}
                       </div>
                     ))}
                     {isLoading && (
-                      <div className="flex gap-3 justify-start">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Bot className="w-5 h-5 text-primary" />
+                      <div className="flex gap-2 md:gap-3 justify-start">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+                          <Bot className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                         </div>
-                        <div className="rounded-2xl px-4 py-3 bg-muted">
+                        <div className="rounded-3xl px-4 py-3 bg-gradient-to-br from-muted to-muted/80 shadow-sm">
                           <div className="flex gap-1">
-                            <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
-                              style={{ animationDelay: "0ms" }}
-                            />
-                            <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
-                              style={{ animationDelay: "150ms" }}
-                            />
-                            <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
-                              style={{ animationDelay: "300ms" }}
-                            />
+                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <div className="w-2 h-2 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: "300ms" }} />
                           </div>
                         </div>
                       </div>
@@ -614,13 +621,14 @@ const ClientChat = () => {
                   </div>
                 </ScrollArea>
 
-                <div>
-                  <div className="flex flex-wrap gap-2 mb-3">
+                {/* Quick replies */}
+                <div className="px-3 md:px-6 pt-2 pb-3 border-t bg-gradient-to-b from-background/50 to-background">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     {quickReplies.map((reply) => (
                       <Badge
                         key={reply.id}
                         variant="outline"
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all hover:scale-105 active:scale-95 text-xs py-1.5 px-3 shadow-sm"
                         onClick={() => handleQuickReply(reply.query)}
                         role="button"
                         tabIndex={0}
@@ -630,126 +638,221 @@ const ClientChat = () => {
                       </Badge>
                     ))}
                   </div>
-
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Type your message..."
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                      disabled={isLoading || isRecording}
-                      aria-label="Chat message"
-                    />
-                    <Button
-                      onClick={isRecording ? stopRecording : startRecording}
-                      variant={isRecording ? "destructive" : "outline"}
-                      size="icon"
-                      aria-label={isRecording ? "Stop recording" : "Record audio"}
-                      disabled={isLoading}
-                    >
-                      {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      onClick={handleSend}
-                      disabled={!input.trim() || isLoading || isRecording}
-                      size="icon"
-                      aria-label="Send message"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
                 </div>
+              </CardContent>
+
+              {/* Sticky input at bottom */}
+              <div className="p-3 md:p-4 border-t bg-background/95 backdrop-blur-sm">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Type your message..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                    disabled={isLoading || isRecording}
+                    aria-label="Chat message"
+                    className="text-sm md:text-base h-11 md:h-10 shadow-sm"
+                  />
+                  <Button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    variant={isRecording ? "destructive" : "outline"}
+                    size="icon"
+                    aria-label={isRecording ? "Stop recording" : "Record audio"}
+                    disabled={isLoading}
+                    className="h-11 w-11 md:h-10 md:w-10 shrink-0 shadow-sm"
+                  >
+                    {isRecording ? <Square className="w-4 h-4 md:w-4 md:h-4" /> : <Mic className="w-4 h-4 md:w-4 md:h-4" />}
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading || isRecording}
+                    size="icon"
+                    aria-label="Send message"
+                    className="h-11 w-11 md:h-10 md:w-10 shrink-0 shadow-md hover:shadow-lg transition-shadow"
+                  >
+                    <Send className="w-4 h-4 md:w-4 md:h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Mobile collapsible sections */}
+            <div className="mt-4 space-y-3 md:hidden">
+              <Collapsible open={libraryOpen} onOpenChange={setLibraryOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between h-12 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Library className="w-4 h-4 text-primary" />
+                      <span className="font-semibold">Coping Library</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${libraryOpen ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2 px-1">
+                  {mockPsychoedSnippets.slice(0, 3).map((snippet) => (
+                    <Card
+                      key={snippet.id}
+                      className="cursor-pointer hover:bg-accent/30 active:scale-[0.98] transition-all shadow-sm"
+                      onClick={() => handleInsertSnippet(snippet.content)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && handleInsertSnippet(snippet.content)}
+                    >
+                      <CardHeader className="pb-2 px-4 py-3">
+                        <CardTitle className="text-sm leading-tight">{snippet.title}</CardTitle>
+                        <div className="flex gap-1.5 mt-1">
+                          <Badge variant="outline" className="capitalize text-xs py-0 px-2">
+                            {snippet.category}
+                          </Badge>
+                          {snippet.duration && (
+                            <Badge variant="secondary" className="text-xs py-0 px-2">
+                              {snippet.duration}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent className="px-4 pb-3">
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{snippet.content}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-xs" 
+                    onClick={() => document.querySelector('[data-sheet-trigger]')?.dispatchEvent(new Event('click'))}
+                  >
+                    View All Strategies
+                  </Button>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Button
+                variant="outline"
+                className="w-full justify-start h-12 shadow-sm hover:shadow-md transition-shadow border-destructive/30 bg-gradient-to-r from-destructive/5 to-destructive/10 hover:from-destructive/10 hover:to-destructive/15"
+                onClick={() => setShowContacts(true)}
+              >
+                <Phone className="w-4 h-4 text-destructive mr-2" />
+                <span className="font-semibold text-destructive">Crisis Contacts - 24/7</span>
+              </Button>
+
+              <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between h-12 shadow-sm hover:shadow-md transition-shadow border-accent/50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Info className="w-4 h-4 text-accent" />
+                      <span className="font-semibold text-sm">Important Information</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${infoOpen ? "rotate-180" : ""}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
+                  <Card className="bg-accent/5 border-accent/50 shadow-sm">
+                    <CardContent className="px-4 py-3">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        This chatbot provides general information only. It cannot diagnose conditions or prescribe
+                        medications. For personalized support, please contact your support worker or healthcare provider.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </div>
+
+          {/* Desktop sidebar - hidden on mobile */}
+          <div className="hidden md:block mt-6 grid grid-cols-3 gap-4">
+            <Sheet>
+              <SheetTrigger asChild data-sheet-trigger>
+                <Card className="cursor-pointer card-hover shadow-sm">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Library className="w-4 h-4 text-primary" />
+                      </div>
+                      <CardTitle className="text-sm font-semibold">Coping Library</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs text-muted-foreground">Browse techniques</p>
+                  </CardContent>
+                </Card>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Coping Strategies</SheetTitle>
+                  <SheetDescription>Click any technique to add it to the chat</SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-150px)] mt-6">
+                  <div className="space-y-3">
+                    {mockPsychoedSnippets.map((snippet) => (
+                      <Card
+                        key={snippet.id}
+                        className="cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => handleInsertSnippet(snippet.content)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => e.key === "Enter" && handleInsertSnippet(snippet.content)}
+                      >
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm">{snippet.title}</CardTitle>
+                          <div className="flex gap-2">
+                            <Badge variant="outline" className="capitalize text-xs">
+                              {snippet.category}
+                            </Badge>
+                            {snippet.duration && (
+                              <Badge variant="secondary" className="text-xs">
+                                {snippet.duration}
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-xs text-muted-foreground line-clamp-3">{snippet.content}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+
+            <Card
+              className="cursor-pointer card-hover border-destructive/30 bg-gradient-to-br from-destructive/5 to-destructive/10 shadow-sm"
+              onClick={() => setShowContacts(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && setShowContacts(true)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center">
+                    <Phone className="w-4 h-4 text-destructive" />
+                  </div>
+                  <CardTitle className="text-sm font-semibold text-destructive">Crisis Contacts</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">24/7 emergency support</p>
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Card className="cursor-pointer card-hover">
-                    <CardHeader>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Library className="w-5 h-5 text-primary" />
-                        </div>
-                        <CardTitle className="text-base font-semibold">Coping Library</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">Browse self-help techniques and strategies</p>
-                    </CardContent>
-                  </Card>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Coping Strategies</SheetTitle>
-                    <SheetDescription>Click any technique to add it to the chat</SheetDescription>
-                  </SheetHeader>
-                  <ScrollArea className="h-[calc(100vh-150px)] mt-6">
-                    <div className="space-y-4">
-                      {mockPsychoedSnippets.map((snippet) => (
-                        <Card
-                          key={snippet.id}
-                          className="cursor-pointer hover:bg-accent/50 transition-colors"
-                          onClick={() => handleInsertSnippet(snippet.content)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => e.key === "Enter" && handleInsertSnippet(snippet.content)}
-                        >
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">{snippet.title}</CardTitle>
-                            <div className="flex gap-2">
-                              <Badge variant="outline" className="capitalize text-xs">
-                                {snippet.category}
-                              </Badge>
-                              {snippet.duration && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {snippet.duration}
-                                </Badge>
-                              )}
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-xs text-muted-foreground line-clamp-3">{snippet.content}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </SheetContent>
-              </Sheet>
-
-              <Card
-                className="cursor-pointer card-hover border-destructive/30 bg-gradient-to-br from-destructive/5 to-destructive/10"
-                onClick={() => setShowContacts(true)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && setShowContacts(true)}
-              >
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/20 flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-destructive" />
-                    </div>
-                    <CardTitle className="text-base font-semibold text-destructive">Crisis Contacts</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">24/7 emergency and crisis support</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-accent/5 border-accent">
-                <CardHeader>
-                  <CardTitle className="text-sm">Important</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    This chatbot provides general information only. It cannot diagnose conditions or prescribe
-                    medications. For personalized support, please contact your support worker or healthcare provider.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="bg-accent/5 border-accent shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Important</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  General information only. Not for diagnosis or prescriptions.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
