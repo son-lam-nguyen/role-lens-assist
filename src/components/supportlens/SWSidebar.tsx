@@ -23,26 +23,28 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { title: "Overview", url: "/sw", icon: LayoutDashboard },
-  { title: "Upload & Analyze", url: "/sw/upload", icon: Upload },
-  { title: "Client List", url: "/sw/clients", icon: Users },
-  { title: "Similar Cases", url: "/sw/cases", icon: Search },
-  { title: "Calendar", url: "/sw/calendar", icon: Calendar },
-  { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen },
-  { title: "Messages", url: "/sw/messages", icon: MessageSquare },
-  { title: "Library", url: "/sw/library", icon: BookOpen },
-  { title: "Audio Recorded", url: "/sw/recordings", icon: AudioLines },
-  { title: "Settings", url: "/sw/settings", icon: SettingsIcon },
+  { title: "Overview", url: "/sw", icon: LayoutDashboard, color: "text-primary" },
+  { title: "Upload & Analyze", url: "/sw/upload", icon: Upload, color: "text-primary" },
+  { title: "Client List", url: "/sw/clients", icon: Users, color: "text-blue-600" },
+  { title: "Similar Cases", url: "/sw/cases", icon: Search, color: "text-accent" },
+  { title: "Calendar", url: "/sw/calendar", icon: Calendar, color: "text-purple-600" },
+  { title: "Notes (SOAP)", url: "/sw/notes", icon: NotebookPen, color: "text-orange-600" },
+  { title: "Messages", url: "/sw/messages", icon: MessageSquare, color: "text-pink-600" },
+  { title: "Library", url: "/sw/library", icon: BookOpen, color: "text-indigo-600" },
+  { title: "Audio Recorded", url: "/sw/recordings", icon: AudioLines, color: "text-teal-600" },
+  { title: "Settings", url: "/sw/settings", icon: SettingsIcon, color: "text-muted-foreground" },
 ];
 
 export const SWSidebar = () => {
   return (
-    <Sidebar className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-40 bg-background">
-      <SidebarContent>
+    <Sidebar className="sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto z-40 bg-background border-r">
+      <SidebarContent className="p-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Support Worker</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Support Worker
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
@@ -51,12 +53,12 @@ export const SWSidebar = () => {
                       end={item.url === "/sw"}
                       className={({ isActive }) =>
                         isActive 
-                          ? "bg-gradient-to-r from-primary/10 to-transparent border-l-2 border-primary font-medium" 
-                          : "hover:bg-sidebar-accent/50 transition-colors"
+                          ? "bg-gradient-to-r from-primary/15 to-primary/5 border-l-4 border-primary font-semibold text-primary shadow-sm" 
+                          : "hover:bg-muted/50 hover:border-l-4 hover:border-l-muted-foreground/20 transition-all"
                       }
                     >
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.title}</span>
+                      <item.icon className={`w-5 h-5 ${item.color}`} />
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

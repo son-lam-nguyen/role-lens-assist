@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Clock, TrendingUp, Mic, Play } from "lucide-react";
-import { mockTranscripts } from "@/lib/mock/mockTranscripts";
+import { Upload, FileText, Clock, TrendingUp, Mic, Play, Users, AlertTriangle, Timer, Zap, ArrowRight } from "lucide-react";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { recordingsStore, Recording } from "@/lib/recordings/store";
 import { clientStore, Client } from "@/lib/clients/store";
+import { Progress } from "@/components/ui/progress";
 
 const Overview = () => {
   const navigate = useNavigate();
@@ -40,157 +40,259 @@ const Overview = () => {
   };
 
   const kpis = [
-    { label: "Total Clients", value: clients.length.toString(), icon: FileText, trend: `${recordings.length} recordings` },
-    { label: "Guidelines Attached", value: "47", icon: TrendingUp, trend: "+12 this week" },
-    { label: "Risk Flags Detected", value: "6", icon: Badge, trend: "2 high priority" },
-    { label: "Avg. Time Saved", value: "18m", icon: Clock, trend: "per session" },
+    { 
+      label: "Total Clients", 
+      value: clients.length.toString(), 
+      icon: Users, 
+      trend: `${recordings.length} recordings`,
+      color: "from-blue-500/20 to-blue-600/5",
+      iconColor: "text-blue-600",
+      progress: Math.min((clients.length / 50) * 100, 100)
+    },
+    { 
+      label: "Guidelines Attached", 
+      value: "47", 
+      icon: FileText, 
+      trend: "+12 this week",
+      color: "from-accent/20 to-accent/5",
+      iconColor: "text-accent",
+      progress: 78
+    },
+    { 
+      label: "Risk Flags Detected", 
+      value: "6", 
+      icon: AlertTriangle, 
+      trend: "2 high priority",
+      color: "from-warning/20 to-warning/5",
+      iconColor: "text-warning",
+      progress: 25
+    },
+    { 
+      label: "Avg. Time Saved", 
+      value: "18m", 
+      icon: Timer, 
+      trend: "per session",
+      color: "from-primary/20 to-primary/5",
+      iconColor: "text-primary",
+      progress: 85
+    },
   ];
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Support Worker Dashboard</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-transparent rounded-2xl p-6 border border-primary/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <Zap className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold">Support Worker Dashboard</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           AI-powered tools for efficient case documentation and evidence-based support
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi, idx) => (
-          <Card key={kpi.label} className="card-hover" style={{ animationDelay: `${idx * 0.1}s` }}>
-            <CardHeader className="pb-3">
-              <CardDescription className="text-sm font-medium">{kpi.label}</CardDescription>
+          <Card 
+            key={kpi.label} 
+            className={`card-hover overflow-hidden border-l-4 bg-gradient-to-br ${kpi.color}`}
+            style={{ 
+              animationDelay: `${idx * 0.1}s`,
+              borderLeftColor: `hsl(var(--${kpi.iconColor.replace('text-', '')}))` 
+            }}
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between">
+                <CardDescription className="text-xs font-semibold uppercase tracking-wider">{kpi.label}</CardDescription>
+                <div className={`w-10 h-10 rounded-lg bg-background/50 flex items-center justify-center ${kpi.iconColor}`}>
+                  <kpi.icon className="w-5 h-5" />
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-3xl font-bold mb-1">{kpi.value}</div>
-                  <p className="text-xs text-muted-foreground">{kpi.trend}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <kpi.icon className="w-6 h-6 text-primary" />
-                </div>
+            <CardContent className="space-y-2">
+              <div className="text-4xl font-bold tracking-tight">{kpi.value}</div>
+              <div className="space-y-1">
+                <Progress value={kpi.progress} className="h-1.5" />
+                <p className="text-xs text-muted-foreground font-medium">{kpi.trend}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="card-hover">
-          <CardHeader>
-            <CardTitle className="text-xl">Recent Recordings</CardTitle>
-            <CardDescription>Your latest audio recordings</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recordings.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Mic className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No recordings yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recordings.slice(0, 5).map((recording) => (
-                  <div
-                    key={recording.id}
-                    className="flex items-start justify-between p-4 rounded-xl border hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all cursor-pointer group"
-                    onClick={() => navigate(`/sw/recordings`)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && navigate("/sw/recordings")}
-                  >
-                    <div className="space-y-1 flex-1">
-                      <h4 className="font-semibold group-hover:text-primary transition-colors">{recording.name}</h4>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatDuration(recording.duration)}</span>
-                        <span>•</span>
-                        <span>{new Date(recording.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      {recording.clientId && (
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {getClientName(recording.clientId)}
-                        </Badge>
-                      )}
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <Play className="w-4 h-4" />
-                    </Button>
+      <Card className="card-hover bg-gradient-to-br from-background to-muted/20">
+        <CardHeader className="border-b bg-background/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Mic className="w-4 h-4 text-primary" />
+                </div>
+                Recent Recordings
+              </CardTitle>
+              <CardDescription>Your latest audio recordings</CardDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/sw/recordings")}
+              className="gap-1"
+            >
+              View all
+              <ArrowRight className="w-3 h-3" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {recordings.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl border-2 border-dashed">
+              <Mic className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">No recordings yet</p>
+              <p className="text-sm">Start by uploading or recording audio</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recordings.slice(0, 5).map((recording, idx) => (
+                <div
+                  key={recording.id}
+                  className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:border-primary/50 hover:shadow-md hover:scale-[1.01] transition-all cursor-pointer group"
+                  onClick={() => navigate(`/sw/recordings`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && navigate("/sw/recordings")}
+                  style={{ animationDelay: `${idx * 0.05}s` }}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Play className="w-5 h-5 text-primary" />
                   </div>
-                ))}
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <h4 className="font-semibold group-hover:text-primary transition-colors truncate">{recording.name}</h4>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>{formatDuration(recording.duration)}</span>
+                      <span>•</span>
+                      <span>{new Date(recording.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  {recording.clientId && (
+                    <Badge variant="outline" className="text-xs bg-background">
+                      {getClientName(recording.clientId)}
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="card-hover border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent">
+          <CardContent className="p-6">
+            <Button
+              onClick={() => navigate("/sw/upload")}
+              className="w-full justify-between group h-auto py-4"
+              size="lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">Upload Audio</div>
+                  <div className="text-xs opacity-90">Analyze new recordings</div>
+                </div>
               </div>
-            )}
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="card-hover">
-          <CardHeader>
-            <CardTitle className="text-xl">Quick Actions</CardTitle>
-            <CardDescription>Common tasks and workflows</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={() => navigate("/sw/upload")}
-              className="w-full justify-start group"
-              size="lg"
-            >
-              <Upload className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Upload New Audio
-            </Button>
-            <Button
-              onClick={() => navigate("/sw/cases")}
-              variant="outline"
-              className="w-full justify-start group hover:border-primary/50"
-              size="lg"
-            >
-              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Search Similar Cases
-            </Button>
-            <Button
-              onClick={() => navigate("/sw/notes")}
-              variant="outline"
-              className="w-full justify-start group hover:border-primary/50"
-              size="lg"
-            >
-              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Create SOAP Note
-            </Button>
-            <Button
-              onClick={() => navigate("/sw/clients")}
-              variant="outline"
-              className="w-full justify-start group hover:border-primary/50"
-              size="lg"
-            >
-              <FileText className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Manage Clients
-            </Button>
+        <Card className="card-hover border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent">
+          <CardContent className="p-6">
             <Button
               onClick={() => setOpenRecorder(true)}
               variant="outline"
-              className="w-full justify-start group hover:border-primary/50"
+              className="w-full justify-between group h-auto py-4 hover:bg-accent/10 hover:border-accent"
               size="lg"
             >
-              <Mic className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-              Record Audio
-            </Button>
-
-            <div className="pt-4 mt-4 border-t">
-              <h4 className="text-sm font-semibold mb-3">Recent Activity</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p className="flex items-center gap-2">
-                  <span className="text-accent">✓</span> Uploaded "Family Conflict" - 2 hours ago
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-accent">✓</span> Exported SOAP note - 5 hours ago
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-accent">✓</span> Added 3 guidelines to notes - Yesterday
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <Mic className="w-5 h-5 text-accent" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">Record Audio</div>
+                  <div className="text-xs text-muted-foreground">Start live recording</div>
+                </div>
               </div>
-            </div>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="card-hover border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-500/5 to-transparent">
+          <CardContent className="p-6">
+            <Button
+              onClick={() => navigate("/sw/clients")}
+              variant="outline"
+              className="w-full justify-between group h-auto py-4 hover:bg-blue-500/10 hover:border-blue-500"
+              size="lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">Manage Clients</div>
+                  <div className="text-xs text-muted-foreground">View all clients</div>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-gradient-to-br from-muted/50 to-background border-dashed">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Clock className="w-4 h-4 text-accent" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-accent text-xs">✓</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Uploaded "Family Conflict"</p>
+                <p className="text-xs text-muted-foreground">2 hours ago</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-accent text-xs">✓</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Exported SOAP note</p>
+                <p className="text-xs text-muted-foreground">5 hours ago</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-accent text-xs">✓</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">Added 3 guidelines to notes</p>
+                <p className="text-xs text-muted-foreground">Yesterday</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <RecorderModal open={openRecorder} onOpenChange={setOpenRecorder} />
     </div>
