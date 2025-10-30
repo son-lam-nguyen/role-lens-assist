@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Search, Mic, ChevronDown, FileText, Users } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { clientStore, type Client, type RiskLevel } from "@/lib/clients/store";
 import { recordingsStore, type Recording } from "@/lib/recordings/store";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
@@ -55,6 +56,8 @@ const Clients = () => {
   const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null);
   const [deleteAnalysisDialogOpen, setDeleteAnalysisDialogOpen] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<{ clientId: string; analysisId: string } | null>(null);
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -267,6 +270,41 @@ const Clients = () => {
     setAnalysisToDelete(null);
   };
 
+  const handleSelectAll = () => {
+    if (selectedClients.size === filteredClients.length) {
+      setSelectedClients(new Set());
+    } else {
+      setSelectedClients(new Set(filteredClients.map(c => c.id)));
+    }
+  };
+
+  const handleSelectClient = (id: string) => {
+    const newSelected = new Set(selectedClients);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedClients(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    setBulkDeleteDialogOpen(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    for (const id of selectedClients) {
+      await clientStore.remove(id);
+    }
+    await loadClients();
+    setSelectedClients(new Set());
+    setBulkDeleteDialogOpen(false);
+    toast({
+      title: "Clients Deleted",
+      description: `${selectedClients.size} client(s) have been removed.`,
+    });
+  };
+
   const getRiskBadgeVariant = (risk: RiskLevel) => {
     switch (risk) {
       case 'high': return 'destructive';
@@ -305,15 +343,30 @@ const Clients = () => {
 
       <Card className="card-hover border-l-4 border-l-blue-600 bg-gradient-to-br from-blue-600/5 to-transparent">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center">
-              <Users className="w-4 h-4 text-blue-600" />
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-blue-600" />
+                </div>
+                All Clients
+              </CardTitle>
+              <CardDescription>
+                {clients.length} {clients.length === 1 ? 'client' : 'clients'} in your caseload
+                {selectedClients.size > 0 && ` • ${selectedClients.size} selected`}
+              </CardDescription>
             </div>
-            All Clients
-          </CardTitle>
-          <CardDescription>
-            {clients.length} {clients.length === 1 ? 'client' : 'clients'} in your caseload
-          </CardDescription>
+            {selectedClients.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Selected ({selectedClients.size})
+              </Button>
+            )}
+          </div>
           <div className="relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -328,6 +381,13 @@ const Clients = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedClients.size === filteredClients.length && filteredClients.length > 0}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Age</TableHead>
                 <TableHead>Gender</TableHead>
@@ -341,13 +401,20 @@ const Clients = () => {
             <TableBody>
               {filteredClients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     {searchQuery ? "No clients match your search." : "No clients yet. Add your first client to get started."}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredClients.map((client) => (
                   <TableRow key={client.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedClients.has(client.id)}
+                        onCheckedChange={() => handleSelectClient(client.id)}
+                        aria-label={`Select ${client.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       <button
                         onClick={() => handleViewDetails(client)}
@@ -792,7 +859,27 @@ const Clients = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <RecorderModal 
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Clients</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedClients.size} client(s)? This action cannot be undone and will remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <RecorderModal
         open={recorderOpen} 
         onOpenChange={setRecorderOpen}
         preselectedClientId={selectedClientForRecording}

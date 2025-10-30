@@ -25,6 +25,7 @@ import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { recordingsStore, Recording } from "@/lib/recordings/store";
 import { getExtensionForMime, mapMimeToExt } from "@/lib/audio/mimeDetection";
 import { AudioLines, Play, Download, Upload, Trash2, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -35,6 +36,8 @@ const Recordings = () => {
   const [isRecorderOpen, setIsRecorderOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [selectedRecordings, setSelectedRecordings] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   const loadRecordings = async () => {
     const stored = await recordingsStore.getAll();
@@ -93,6 +96,38 @@ const Recordings = () => {
       setDeleteTarget(null);
       toast.success("Recording deleted");
     }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRecordings.size === filteredRecordings.length) {
+      setSelectedRecordings(new Set());
+    } else {
+      setSelectedRecordings(new Set(filteredRecordings.map(r => r.id)));
+    }
+  };
+
+  const handleSelectRecording = (id: string) => {
+    const newSelected = new Set(selectedRecordings);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRecordings(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    setBulkDeleteDialogOpen(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    for (const id of selectedRecordings) {
+      await recordingsStore.remove(id);
+    }
+    loadRecordings();
+    setSelectedRecordings(new Set());
+    setBulkDeleteDialogOpen(false);
+    toast.success(`${selectedRecordings.size} recording(s) deleted`);
   };
 
   const formatDuration = (seconds: number) => {
@@ -155,16 +190,29 @@ const Recordings = () => {
               </CardTitle>
               <CardDescription>
                 {recordings.length} recording{recordings.length !== 1 ? 's' : ''} saved
+                {selectedRecordings.size > 0 && ` • ${selectedRecordings.size} selected`}
               </CardDescription>
             </div>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search recordings..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex items-center gap-3">
+              {selectedRecordings.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Selected ({selectedRecordings.size})
+                </Button>
+              )}
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search recordings..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -192,6 +240,13 @@ const Recordings = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedRecordings.size === filteredRecordings.length && filteredRecordings.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Format / Size</TableHead>
@@ -201,6 +256,13 @@ const Recordings = () => {
                 <TableBody>
                   {filteredRecordings.map((recording) => (
                     <TableRow key={recording.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedRecordings.has(recording.id)}
+                          onCheckedChange={() => handleSelectRecording(recording.id)}
+                          aria-label={`Select ${recording.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {recording.name}
                       </TableCell>
@@ -291,6 +353,23 @@ const Recordings = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Recordings</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedRecordings.size} recording(s)? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete All
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
