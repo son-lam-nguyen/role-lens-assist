@@ -32,17 +32,27 @@ const Cases = () => {
   };
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Similar Cases</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-accent/5 via-primary/5 to-transparent rounded-2xl p-6 border border-accent/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+            <Search className="w-5 h-5 text-accent-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold">Similar Cases</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Find relevant cases and evidence-based guidelines
         </p>
       </div>
 
-      <Card className="card-hover">
+      <Card className="card-hover border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-xl">Search & Filter</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+              <Search className="w-4 h-4 text-accent" />
+            </div>
+            Search & Filter
+          </CardTitle>
           <CardDescription>Search by keywords or filter by topic tags</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -99,13 +109,14 @@ const Cases = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {results.map((caseData) => (
-              <CaseCard
-                key={caseData.id}
-                case={caseData}
-                onOpenGuideline={() => setSelectedGuidelineId(caseData.guidelineId)}
-              />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            {results.map((caseData, idx) => (
+              <div key={caseData.id} style={{ animationDelay: `${idx * 0.05}s` }} className="fade-in">
+                <CaseCard
+                  case={caseData}
+                  onOpenGuideline={() => setSelectedGuidelineId(caseData.guidelineId)}
+                />
+              </div>
             ))}
           </div>
         )}

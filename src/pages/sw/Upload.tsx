@@ -11,7 +11,7 @@ import { ConfidenceMeter } from "@/components/supportlens/ConfidenceMeter";
 import { Transcript, processAudioMock } from "@/lib/mock/mockTranscripts";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { FileText, Send, AlertCircle } from "lucide-react";
+import { FileText, Send, AlertCircle, Upload as UploadIcon } from "lucide-react";
 import { recordingsStore } from "@/lib/recordings/store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { clientStore, Client } from "@/lib/clients/store";
@@ -264,17 +264,27 @@ const Upload = () => {
   };
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Upload & Analyze</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-primary/5 via-accent/5 to-transparent rounded-2xl p-6 border border-primary/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <UploadIcon className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold">Upload & Analyze</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Upload session audio for automatic transcription and analysis
         </p>
       </div>
 
-      <Card className="card-hover">
+      <Card className="card-hover border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader>
-          <CardTitle className="text-xl">Audio Upload</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <UploadIcon className="w-4 h-4 text-primary" />
+            </div>
+            Audio Upload
+          </CardTitle>
           <CardDescription>
             Select an audio file (WAV, MP3, M4A) to transcribe and analyze
           </CardDescription>
@@ -321,9 +331,9 @@ const Upload = () => {
       {transcript && (
         <div className="space-y-6 fade-in">
           {/* Key Metrics Overview */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
             {transcript.confidence > 0 && (
-              <Card className="card-hover">
+              <Card className="card-hover border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent">
                 <CardContent className="pt-6">
                   <ConfidenceMeter confidence={transcript.confidence} />
                 </CardContent>

@@ -189,19 +189,26 @@ const Messages = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Client Messages</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-pink-600/5 via-primary/5 to-transparent rounded-2xl p-6 border border-pink-600/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-pink-600 flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold">Client Messages</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Respond to client requests for human support
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 card-hover border-l-4 border-l-warning bg-gradient-to-br from-warning/5 to-transparent">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-warning" />
+              </div>
               Waiting for Support
             </CardTitle>
             <CardDescription>
@@ -285,12 +292,14 @@ const Messages = () => {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 flex flex-col">
+        <Card className="lg:col-span-2 flex flex-col card-hover border-l-4 border-l-pink-600 bg-gradient-to-br from-pink-600/5 to-transparent">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
+                  <div className="w-8 h-8 rounded-lg bg-pink-600/10 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-pink-600" />
+                  </div>
                   Chat
                 </CardTitle>
                 <CardDescription>

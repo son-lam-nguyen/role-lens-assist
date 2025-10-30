@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Download, Save, Trash2 } from "lucide-react";
+import { Download, Save, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
@@ -141,19 +141,29 @@ const Notes = () => {
   };
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">SOAP Notes</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-orange-600/5 via-primary/5 to-transparent rounded-2xl p-6 border border-orange-600/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-orange-600 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold">SOAP Notes</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Create structured case notes with evidence-based citations
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="card-hover">
+          <Card className="card-hover border-l-4 border-l-orange-600 bg-gradient-to-br from-orange-600/5 to-transparent">
             <CardHeader>
-              <CardTitle className="text-xl">Subjective</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-600/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-orange-600" />
+                </div>
+                Subjective
+              </CardTitle>
               <CardDescription>Client's reported experience and concerns</CardDescription>
             </CardHeader>
             <CardContent>
@@ -167,9 +177,14 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card className="card-hover">
+          <Card className="card-hover border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader>
-              <CardTitle className="text-xl">Objective</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-primary" />
+                </div>
+                Objective
+              </CardTitle>
               <CardDescription>Observable information and measurements</CardDescription>
             </CardHeader>
             <CardContent>
@@ -183,9 +198,14 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card className="card-hover">
+          <Card className="card-hover border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent">
             <CardHeader>
-              <CardTitle className="text-xl">Assessment</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-accent" />
+                </div>
+                Assessment
+              </CardTitle>
               <CardDescription>Professional interpretation and analysis</CardDescription>
             </CardHeader>
             <CardContent>
@@ -199,9 +219,14 @@ const Notes = () => {
             </CardContent>
           </Card>
 
-          <Card className="card-hover">
+          <Card className="card-hover border-l-4 border-l-blue-600 bg-gradient-to-br from-blue-600/5 to-transparent">
             <CardHeader>
-              <CardTitle className="text-xl">Plan</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                </div>
+                Plan
+              </CardTitle>
               <CardDescription>Intervention strategies and next steps</CardDescription>
             </CardHeader>
             <CardContent>

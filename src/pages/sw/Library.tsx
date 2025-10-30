@@ -35,10 +35,15 @@ const Library = () => {
   };
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Resource Library</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-indigo-600/5 via-primary/5 to-transparent rounded-2xl p-6 border border-indigo-600/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <FileText className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold">Resource Library</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Evidence-based guidelines and psychoeducation resources
         </p>
       </div>
@@ -50,11 +55,16 @@ const Library = () => {
         </TabsList>
 
         <TabsContent value="guidelines" className="space-y-6">
-          <Card>
+          <Card className="card-hover border-l-4 border-l-indigo-600 bg-gradient-to-br from-indigo-600/5 to-transparent">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Evidence-Based Guidelines</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    Evidence-Based Guidelines
+                  </CardTitle>
                   <CardDescription>Professional resources and best practices</CardDescription>
                 </div>
                 <Badge variant="secondary">{filteredGuidelines.length} items</Badge>
@@ -136,11 +146,16 @@ const Library = () => {
         </TabsContent>
 
         <TabsContent value="psychoed" className="space-y-6">
-          <Card>
+          <Card className="card-hover border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Psychoeducation Resources</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-accent" />
+                    </div>
+                    Psychoeducation Resources
+                  </CardTitle>
                   <CardDescription>Coping strategies and wellness techniques</CardDescription>
                 </div>
                 <Badge variant="secondary">{filteredPsychoed.length} items</Badge>

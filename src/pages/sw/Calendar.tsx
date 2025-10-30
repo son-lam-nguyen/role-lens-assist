@@ -217,15 +217,21 @@ const Calendar = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Weekly Calendar</h1>
-          <p className="text-muted-foreground mt-2">
-            Case follow-up reminders and schedule overview
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-purple-600/5 via-primary/5 to-transparent rounded-2xl p-6 border border-purple-600/10">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center">
+                <CalendarIcon className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold">Weekly Calendar</h1>
+            </div>
+            <p className="text-foreground/70 text-base ml-13">
+              Case follow-up reminders and schedule overview
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={previousWeek}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -235,6 +241,7 @@ const Calendar = () => {
           <Button variant="outline" size="sm" onClick={nextWeek}>
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
         </div>
       </div>
 
@@ -248,10 +255,12 @@ const Calendar = () => {
         </Alert>
       )}
 
-      <Card>
+      <Card className="card-hover border-l-4 border-l-purple-600 bg-gradient-to-br from-purple-600/5 to-transparent">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-lg bg-purple-600/10 flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 text-purple-600" />
+            </div>
             Week of {format(currentWeekStart, "MMM dd, yyyy")}
           </CardTitle>
           <CardDescription>
@@ -343,25 +352,30 @@ const Calendar = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="card-hover bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle>Schedule Summary</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <CalendarIcon className="w-4 h-4 text-primary" />
+            </div>
+            Schedule Summary
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-destructive/10">
-              <p className="text-sm font-medium text-destructive">High-Risk Cases</p>
-              <p className="text-2xl font-bold mt-1">{highRiskCount}/3</p>
+            <div className="p-4 rounded-xl border-l-4 border-l-destructive bg-gradient-to-br from-destructive/10 to-transparent hover:shadow-md transition-shadow">
+              <p className="text-sm font-medium text-destructive uppercase tracking-wider">High-Risk Cases</p>
+              <p className="text-3xl font-bold mt-2">{highRiskCount}/3</p>
             </div>
-            <div className="p-4 rounded-lg bg-muted">
-              <p className="text-sm font-medium">Moderate Cases</p>
-              <p className="text-2xl font-bold mt-1">
+            <div className="p-4 rounded-xl border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent hover:shadow-md transition-shadow">
+              <p className="text-sm font-medium uppercase tracking-wider">Moderate Cases</p>
+              <p className="text-3xl font-bold mt-2">
                 {events.filter(e => e.risk === "moderate").length}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-muted">
-              <p className="text-sm font-medium">Low-Risk Cases</p>
-              <p className="text-2xl font-bold mt-1">
+            <div className="p-4 rounded-xl border-l-4 border-l-accent bg-gradient-to-br from-accent/5 to-transparent hover:shadow-md transition-shadow">
+              <p className="text-sm font-medium uppercase tracking-wider">Low-Risk Cases</p>
+              <p className="text-3xl font-bold mt-2">
                 {events.filter(e => e.risk === "low").length}
               </p>
             </div>

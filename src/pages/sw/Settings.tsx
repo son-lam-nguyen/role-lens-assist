@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone } from "lucide-react";
+import { Phone, Settings as SettingsIcon } from "lucide-react";
 import { defaultSettings, crisisContactsAU } from "@/lib/mock/mockSettings";
 import { toast } from "sonner";
 
@@ -17,19 +17,29 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-8 fade-in">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground text-lg">
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-muted-foreground/5 via-primary/5 to-transparent rounded-2xl p-6 border border-muted-foreground/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-muted-foreground flex items-center justify-center">
+            <SettingsIcon className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold">Settings</h1>
+        </div>
+        <p className="text-foreground/70 text-base ml-13">
           Configure application preferences and view crisis contacts
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
-          <Card className="card-hover">
+          <Card className="card-hover border-l-4 border-l-primary bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader>
-              <CardTitle className="text-xl">Application Settings</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <SettingsIcon className="w-4 h-4 text-primary" />
+                </div>
+                Application Settings
+              </CardTitle>
               <CardDescription>Manage default behaviors and preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -91,9 +101,14 @@ const Settings = () => {
           </Card>
         </div>
 
-        <Card className="card-hover">
+        <Card className="card-hover border-l-4 border-l-destructive bg-gradient-to-br from-destructive/5 to-transparent">
           <CardHeader>
-            <CardTitle className="text-xl">Australian Crisis Contacts</CardTitle>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Phone className="w-4 h-4 text-destructive" />
+              </div>
+              Australian Crisis Contacts
+            </CardTitle>
             <CardDescription>Emergency and crisis support services</CardDescription>
           </CardHeader>
           <CardContent>

@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Search, Mic, ChevronDown, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Mic, ChevronDown, FileText, Users } from "lucide-react";
 import { clientStore, type Client, type RiskLevel } from "@/lib/clients/store";
 import { recordingsStore, type Recording } from "@/lib/recordings/store";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
@@ -282,23 +282,35 @@ const Clients = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Client List</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your client profiles and track important information
-          </p>
+    <div className="space-y-6 fade-in">
+      <div className="bg-gradient-to-r from-blue-600/5 via-primary/5 to-transparent rounded-2xl p-6 border border-blue-600/10">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold">Client List</h1>
+            </div>
+            <p className="text-foreground/70 text-base ml-13">
+              Manage your client profiles and track important information
+            </p>
+          </div>
+          <Button onClick={handleAdd} size="lg">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Client
+          </Button>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Client
-        </Button>
       </div>
 
-      <Card>
+      <Card className="card-hover border-l-4 border-l-blue-600 bg-gradient-to-br from-blue-600/5 to-transparent">
         <CardHeader>
-          <CardTitle>All Clients</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-600/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-blue-600" />
+            </div>
+            All Clients
+          </CardTitle>
           <CardDescription>
             {clients.length} {clients.length === 1 ? 'client' : 'clients'} in your caseload
           </CardDescription>
