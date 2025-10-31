@@ -39,6 +39,7 @@ import { recordingsStore, type Recording } from "@/lib/recordings/store";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { activityStore } from "@/lib/activity/activityStore";
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -181,6 +182,7 @@ const Clients = () => {
           return;
         }
 
+        activityStore.log('client_edit', `Updated ${formData.name}'s profile`, { clientId: editingClient.id });
         toast({
           title: "Client Updated",
           description: `${formData.name}'s profile has been updated.`,
@@ -205,6 +207,7 @@ const Clients = () => {
           return;
         }
 
+        activityStore.log('client_add', `Added ${formData.name} to client list`, { clientId: result.id });
         toast({
           title: "Client Added",
           description: `${formData.name} has been added to your client list.`,
@@ -232,6 +235,7 @@ const Clients = () => {
     if (clientToDelete) {
       const client = await clientStore.getById(clientToDelete);
       await clientStore.remove(clientToDelete);
+      activityStore.log('client_delete', `Removed ${client?.name || "client"} from list`, { clientId: clientToDelete });
       loadClients();
       toast({
         title: "Client Removed",
@@ -293,15 +297,17 @@ const Clients = () => {
   };
 
   const handleBulkDeleteConfirm = async () => {
+    const count = selectedClients.size;
     for (const id of selectedClients) {
       await clientStore.remove(id);
     }
+    activityStore.log('client_delete', `Removed ${count} client(s) from list`);
     await loadClients();
     setSelectedClients(new Set());
     setBulkDeleteDialogOpen(false);
     toast({
       title: "Clients Deleted",
-      description: `${selectedClients.size} client(s) have been removed.`,
+      description: `${count} client(s) have been removed.`,
     });
   };
 

@@ -3,17 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Clock, TrendingUp, Mic, Play, Users, AlertTriangle, Timer, Zap, ArrowRight } from "lucide-react";
+import { Upload, FileText, Clock, TrendingUp, Mic, Play, Users, AlertTriangle, Timer, Zap, ArrowRight, UserPlus, Edit, Trash2, FileDown, CheckCircle, Calendar, MessageSquare } from "lucide-react";
 import { RecorderModal } from "@/components/recorder/RecorderModal";
 import { recordingsStore, Recording } from "@/lib/recordings/store";
 import { clientStore, Client } from "@/lib/clients/store";
 import { Progress } from "@/components/ui/progress";
+import { activityStore } from "@/lib/activity/activityStore";
+import { formatDistanceToNow } from "date-fns";
 
 const Overview = () => {
   const navigate = useNavigate();
   const [openRecorder, setOpenRecorder] = useState(false);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,6 +26,7 @@ const Overview = () => {
       ]);
       setRecordings(recordingsData);
       setClients(clientsData);
+      setActivities(activityStore.getRecent(10));
     };
     loadData();
   }, [openRecorder]);
@@ -37,6 +41,25 @@ const Overview = () => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getActivityIcon = (type: string) => {
+    const iconMap: Record<string, any> = {
+      client_add: UserPlus,
+      client_edit: Edit,
+      client_delete: Trash2,
+      audio_upload: Upload,
+      recording_saved: Mic,
+      process_audio: CheckCircle,
+      soap_create: FileText,
+      soap_export: FileDown,
+      calendar_add: Calendar,
+      calendar_edit: Calendar,
+      calendar_delete: Calendar,
+      message_sent: MessageSquare,
+      chat_closed: MessageSquare,
+    };
+    return iconMap[type] || FileText;
   };
 
   const kpis = [
@@ -263,33 +286,26 @@ const Overview = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
-              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-accent text-xs">✓</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-medium">Uploaded "Family Conflict"</p>
-                <p className="text-xs text-muted-foreground">2 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
-              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-accent text-xs">✓</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-medium">Exported SOAP note</p>
-                <p className="text-xs text-muted-foreground">5 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-background border">
-              <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-accent text-xs">✓</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-medium">Added 3 guidelines to notes</p>
-                <p className="text-xs text-muted-foreground">Yesterday</p>
-              </div>
-            </div>
+            {activities.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">No recent activity</p>
+            ) : (
+              activities.map((activity) => {
+                const Icon = getActivityIcon(activity.type);
+                return (
+                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+                    <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-3 h-3 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>

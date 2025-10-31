@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Download, Save, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
+import { activityStore } from "@/lib/activity/activityStore";
 
 interface SOAPNote {
   subjective: string;
@@ -33,6 +34,7 @@ const Notes = () => {
   };
 
   const handleSaveDraft = () => {
+    activityStore.log('soap_create', 'Saved SOAP note draft');
     toast.success("Draft saved successfully");
   };
 
@@ -133,6 +135,7 @@ const Notes = () => {
     }
 
     doc.save(`SOAP-Note-${new Date().toISOString().split('T')[0]}.pdf`);
+    activityStore.log('soap_export', 'Exported SOAP note as PDF');
     toast.success("PDF exported successfully");
   };
 

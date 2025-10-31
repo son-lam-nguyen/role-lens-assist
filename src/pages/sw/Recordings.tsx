@@ -28,6 +28,7 @@ import { AudioLines, Play, Download, Upload, Trash2, Search } from "lucide-react
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { activityStore } from "@/lib/activity/activityStore";
 
 const Recordings = () => {
   const navigate = useNavigate();
@@ -91,7 +92,9 @@ const Recordings = () => {
 
   const handleDeleteConfirm = async () => {
     if (deleteTarget) {
+      const recording = recordings.find(r => r.id === deleteTarget);
       await recordingsStore.remove(deleteTarget);
+      activityStore.log('client_delete', `Deleted recording: ${recording?.name || 'Untitled'}`, { recordingId: deleteTarget });
       loadRecordings();
       setDeleteTarget(null);
       toast.success("Recording deleted");
@@ -121,13 +124,15 @@ const Recordings = () => {
   };
 
   const handleBulkDeleteConfirm = async () => {
+    const count = selectedRecordings.size;
     for (const id of selectedRecordings) {
       await recordingsStore.remove(id);
     }
+    activityStore.log('client_delete', `Deleted ${count} recording(s)`);
     loadRecordings();
     setSelectedRecordings(new Set());
     setBulkDeleteDialogOpen(false);
-    toast.success(`${selectedRecordings.size} recording(s) deleted`);
+    toast.success(`${count} recording(s) deleted`);
   };
 
   const formatDuration = (seconds: number) => {

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Conversation, Message } from "@/lib/messages/store";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Send, Clock, CheckCircle2, User } from "lucide-react";
+import { activityStore } from "@/lib/activity/activityStore";
 
 const Messages = () => {
   const { toast } = useToast();
@@ -147,6 +148,7 @@ const Messages = () => {
 
       if (error) throw error;
       
+      activityStore.log('message_sent', 'Sent message to client');
       setInput("");
       loadMessages(selectedConversation.id);
     } catch (error) {
@@ -172,6 +174,7 @@ const Messages = () => {
         
       if (error) throw error;
       
+      activityStore.log('chat_closed', 'Closed conversation with client');
       toast({
         title: "Conversation closed",
         description: "The conversation has been marked as closed"

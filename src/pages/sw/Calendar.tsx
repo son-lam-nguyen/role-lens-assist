@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { calendarStore, CalendarEvent, CaseRisk } from "@/lib/calendar/store";
+import { activityStore } from "@/lib/activity/activityStore";
 
 interface FormData {
   client: string;
@@ -161,6 +162,7 @@ const Calendar = () => {
         endISO,
         notes: formData.notes,
       });
+      activityStore.log('calendar_edit', `Updated event: ${formData.title}`, { client: formData.client });
       toast({
         title: "Event Updated",
         description: "Follow-up has been updated successfully.",
@@ -174,6 +176,7 @@ const Calendar = () => {
         endISO,
         notes: formData.notes,
       });
+      activityStore.log('calendar_add', `Added event: ${formData.title}`, { client: formData.client });
       toast({
         title: "Event Added",
         description: "Follow-up has been scheduled successfully.",
@@ -187,7 +190,9 @@ const Calendar = () => {
   const handleDelete = async () => {
     if (!eventToDelete) return;
     
+    const event = events.find(e => e.id === eventToDelete);
     await calendarStore.remove(eventToDelete);
+    activityStore.log('calendar_delete', `Deleted event: ${event?.title || 'Untitled'}`, { client: event?.client });
     toast({
       title: "Event Removed",
       description: "Follow-up has been deleted.",

@@ -16,6 +16,7 @@ import { recordingsStore } from "@/lib/recordings/store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { clientStore, Client } from "@/lib/clients/store";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { activityStore } from "@/lib/activity/activityStore";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -131,6 +132,8 @@ const Upload = () => {
           bytes: file.size,
           clientId: selectedClientId || undefined,
         });
+        activityStore.log('audio_upload', `Uploaded ${file.name}`, { fileName: file.name });
+        activityStore.log('process_audio', `Processed ${file.name}`, { fileName: file.name });
       }
       
       // Append analysis results to client's notes
