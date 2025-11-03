@@ -97,7 +97,7 @@ const Calendar = () => {
       case "moderate":
         return "bg-blue-500/20 hover:bg-blue-500/30 text-foreground";
       case "low":
-        return "bg-muted/50 hover:bg-muted text-foreground";
+        return "bg-green-500/20 hover:bg-green-500/30 text-foreground";
     }
   };
 
