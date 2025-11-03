@@ -58,8 +58,8 @@ const Landing = () => {
 
       </main>
 
-      <footer className="border-t mt-16 py-8">
-        <div className="container mx-auto px-4 text-center text-base text-foreground/80">
+      <footer className="border-t mt-16 py-6 bg-black/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 text-center text-lg text-white">
           <p>SupportLens - Demo Platform • Crisis: Lifeline 13 11 14 • Emergency: 000</p>
         </div>
       </footer>
