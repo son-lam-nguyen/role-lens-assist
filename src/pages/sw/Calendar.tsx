@@ -345,7 +345,7 @@ const Calendar = () => {
                               }}
                               className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                             >
-                              <Trash2 className="h-3 w-3 text-destructive" />
+                              <Trash2 className={`h-3 w-3 ${event.risk === "high" ? "text-white" : "text-destructive"}`} />
                             </button>
                           </div>
                         </div>
