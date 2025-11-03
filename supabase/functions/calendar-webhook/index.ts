@@ -9,7 +9,7 @@ interface CalendarEventPayload {
   client: string;
   title: string;
   risk: 'low' | 'moderate' | 'high';
-  date: string;
+  date?: string;
   startTime: string;
   endTime: string;
   notes?: string;
@@ -70,106 +70,110 @@ Deno.serve(async (req) => {
       console.log('No userId provided, using default user:', userId);
     }
 
-    // Parse request body
-    const payload: CalendarEventPayload = await req.json();
-    console.log('Received calendar event:', payload);
+    // Parse request body - expecting an array of events
+    const rawBody = await req.json();
+    const payloads: CalendarEventPayload[] = Array.isArray(rawBody) ? rawBody : [rawBody];
+    console.log('Received calendar events:', payloads);
 
-    // Validate required fields
-    if (!payload.client || !payload.title || !payload.risk || !payload.date || !payload.startTime || !payload.endTime) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required fields. Required: client, title, risk, date, startTime, endTime' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    const results = [];
+    const errors = [];
+
+    for (const payload of payloads) {
+      try {
+        // Validate required fields
+        if (!payload.client || !payload.title || !payload.risk || !payload.startTime || !payload.endTime) {
+          errors.push({
+            payload,
+            error: 'Missing required fields. Required: client, title, risk, startTime, endTime'
+          });
+          continue;
         }
-      );
-    }
 
-    // Validate risk level
-    if (!['low', 'moderate', 'high'].includes(payload.risk)) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid risk level. Must be: low, moderate, or high' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        // Validate risk level
+        if (!['low', 'moderate', 'high'].includes(payload.risk)) {
+          errors.push({
+            payload,
+            error: 'Invalid risk level. Must be: low, moderate, or high'
+          });
+          continue;
         }
-      );
-    }
 
-    // Create ISO timestamps
-    const startISO = `${payload.date}T${payload.startTime}:00`;
-    const endISO = `${payload.date}T${payload.endTime}:00`;
+        // Use ISO timestamps directly from payload
+        const startISO = payload.startTime;
+        const endISO = payload.endTime;
 
-    // Check if client exists, if not create one
-    const { data: existingClient } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('name', payload.client.trim())
-      .single();
+        // Check if client exists, if not create one
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('name', payload.client.trim())
+          .single();
 
-    if (!existingClient) {
-      // Auto-create client if doesn't exist
-      const { error: clientError } = await supabase
-        .from('clients')
-        .insert({
-          user_id: userId,
-          name: payload.client.trim(),
-          age: 0, // Default age
-          gender: 'Not specified',
-          contact: 'Not provided',
-          risk_level: payload.risk,
-          assigned_worker: 'System',
-          notes: 'Auto-created from calendar webhook'
+        if (!existingClient) {
+          const { error: clientError } = await supabase
+            .from('clients')
+            .insert({
+              user_id: userId,
+              name: payload.client.trim(),
+              age: 0,
+              gender: 'Unknown',
+              contact: 'N/A',
+              risk_level: payload.risk,
+              assigned_worker: 'Unassigned',
+              notes: 'Auto-created from webhook'
+            });
+
+          if (clientError) {
+            console.error('Error creating client:', clientError);
+          } else {
+            console.log('Auto-created client:', payload.client.trim());
+          }
+        }
+
+        // Insert calendar event
+        const { data, error } = await supabase
+          .from('calendar_events')
+          .insert({
+            user_id: userId,
+            client: payload.client.trim(),
+            title: payload.title.trim(),
+            risk: payload.risk,
+            start_time: startISO,
+            end_time: endISO,
+            notes: payload.notes && payload.notes !== 'None' ? payload.notes.trim() : null,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Database error:', error);
+          errors.push({
+            payload,
+            error: error.message
+          });
+          continue;
+        }
+
+        console.log('Calendar event created:', data);
+        results.push(data);
+      } catch (eventError) {
+        console.error('Error processing event:', eventError);
+        errors.push({
+          payload,
+          error: eventError instanceof Error ? eventError.message : 'Unknown error'
         });
-
-      if (clientError) {
-        console.error('Error creating client:', clientError);
-      } else {
-        console.log('Auto-created new client:', payload.client.trim());
       }
     }
-
-    // Insert calendar event
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert({
-        user_id: userId,
-        client: payload.client.trim(),
-        title: payload.title.trim(),
-        risk: payload.risk,
-        start_time: startISO,
-        end_time: endISO,
-        notes: payload.notes?.trim() || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Database error:', error);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to create calendar event', 
-          details: error.message 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    console.log('Calendar event created successfully:', data);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Calendar event created successfully',
-        data: data
+        message: `Processed ${results.length} event(s)`,
+        created: results.length,
+        failed: errors.length,
+        data: results,
+        errors: errors.length > 0 ? errors : undefined
       }),
       { 
         status: 200, 
