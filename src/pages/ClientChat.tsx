@@ -668,6 +668,26 @@ const ClientChat = () => {
             </Card>
 
             <div className="space-y-6">
+              <Card
+                className="cursor-pointer hover:shadow-lg transition-all duration-300 rounded-2xl border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10 shadow-md"
+                onClick={() => window.location.href = 'tel:+61468057907'}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && (window.location.href = 'tel:+61468057907')}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shadow-sm">
+                      <Phone className="w-5 h-5 text-primary" />
+                    </div>
+                    <CardTitle className="text-base font-semibold text-primary">Call to book an appointment</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-sm text-muted-foreground leading-relaxed">Speak with our team directly</p>
+                </CardContent>
+              </Card>
+
               <Sheet>
                 <SheetTrigger asChild>
                   <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 rounded-2xl border-border/50 shadow-md">
