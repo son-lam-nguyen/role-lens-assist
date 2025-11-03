@@ -1,6 +1,6 @@
 import { Stethoscope, MessageCircle, UserCircle } from "lucide-react";
 import { RoleCard } from "@/components/supportlens/RoleCard";
-import mentalHealthBg from "@/assets/mental-health-bg.jpg";
+import mentalHealthBg from "@/assets/mental-health-hero-bg.jpg";
 
 const Landing = () => {
   return (
