@@ -16,10 +16,10 @@ const Landing = () => {
 
       <main className="container mx-auto px-4 py-20">
         <section className="text-center mb-20 space-y-8 fade-in">
-          <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4">
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4 text-stroke-subtle">
             Empowering Support Work with AI
           </h2>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4 text-stroke-subtle">
             Streamline documentation, access evidence-based guidelines, and provide safe client support
             with our dual-role platform.
           </p>

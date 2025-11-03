@@ -158,4 +158,16 @@ All colors MUST be HSL.
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   }
+
+  .text-stroke-subtle {
+    text-shadow: 
+      -1px -1px 0 rgba(255, 255, 255, 0.9),
+       1px -1px 0 rgba(255, 255, 255, 0.9),
+      -1px  1px 0 rgba(255, 255, 255, 0.9),
+       1px  1px 0 rgba(255, 255, 255, 0.9),
+      -1px  0   0 rgba(255, 255, 255, 0.9),
+       1px  0   0 rgba(255, 255, 255, 0.9),
+       0   -1px 0 rgba(255, 255, 255, 0.9),
+       0    1px 0 rgba(255, 255, 255, 0.9);
+  }
 }
