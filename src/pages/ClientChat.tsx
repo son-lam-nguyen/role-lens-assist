@@ -181,6 +181,24 @@ const ClientChat = () => {
       };
       setMessages((prev) => [...prev, systemMessage]);
 
+      // Send notification webhook
+      try {
+        await fetch("https://n8n.birthdaymessaging.space/webhook/send-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversation_id: conversationIdResult,
+            client_id: clientId,
+            timestamp: new Date().toISOString(),
+            type: "support_request"
+          })
+        });
+      } catch (error) {
+        console.error("Failed to send notification webhook:", error);
+      }
+
       toast({
         title: "Support Requested",
         description: "A support worker will join shortly"
