@@ -90,6 +90,17 @@ const Calendar = () => {
     }
   };
 
+  const getRiskDotColor = (risk: CaseRisk) => {
+    switch (risk) {
+      case "high":
+        return "bg-red-500";
+      case "moderate":
+        return "bg-blue-500";
+      case "low":
+        return "bg-gray-400";
+    }
+  };
+
   const handleDayClick = (day: Date) => {
     setSelectedDay(day);
     setEditingEvent(null);
@@ -315,37 +326,29 @@ const Calendar = () => {
                       dayEvents.map((event) => (
                         <div 
                           key={event.id}
-                          className="group p-2 rounded-lg bg-muted/50 space-y-1 cursor-pointer hover:bg-muted transition-colors relative"
+                          className="group p-2 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors relative"
                           onClick={() => handleEventClick(event)}
                         >
-                          <div className="flex items-center justify-between gap-1">
-                            <p className="text-xs font-medium truncate">
-                              {event.client}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <Badge 
-                                variant={getRiskColor(event.risk)}
-                                className="text-[10px] px-1 py-0"
-                              >
-                                {event.risk}
-                              </Badge>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  confirmDelete(event.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <Trash2 className="h-3 w-3 text-destructive" />
-                              </button>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskDotColor(event.risk)}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">
+                                {event.client}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {format(new Date(event.startISO), "HH:mm")}–{format(new Date(event.endISO), "HH:mm")}
+                              </p>
                             </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                confirmDelete(event.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </button>
                           </div>
-                          <p className="text-[10px] font-medium text-muted-foreground">
-                            {event.title}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {format(new Date(event.startISO), "HH:mm")} - {format(new Date(event.endISO), "HH:mm")}
-                          </p>
                         </div>
                       ))
                     )}
