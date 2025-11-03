@@ -98,9 +98,25 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Use ISO timestamps directly from payload
-        const startISO = payload.startTime;
-        const endISO = payload.endTime;
+        // Handle timestamps - support both full ISO format and date+time format
+        let startISO: string;
+        let endISO: string;
+        
+        if (payload.startTime.includes('T')) {
+          // Full ISO timestamp provided
+          startISO = payload.startTime;
+          endISO = payload.endTime;
+        } else if (payload.date) {
+          // Separate date and time - combine them into ISO format
+          startISO = `${payload.date}T${payload.startTime}:00`;
+          endISO = `${payload.date}T${payload.endTime}:00`;
+        } else {
+          errors.push({
+            payload,
+            error: 'Invalid time format. Provide either full ISO timestamps (startTime/endTime) or date + time (date, startTime, endTime)'
+          });
+          continue;
+        }
 
         // Check if client exists, if not create one
         const { data: existingClient } = await supabase
