@@ -13,7 +13,6 @@ interface CalendarEventPayload {
   startTime: string;
   endTime: string;
   notes?: string;
-  userId: string;
 }
 
 Deno.serve(async (req) => {
@@ -38,15 +37,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get userId from query parameters
+    const url = new URL(req.url);
+    const userId = url.searchParams.get('userId');
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing userId query parameter' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     // Parse request body
     const payload: CalendarEventPayload = await req.json();
     console.log('Received calendar event:', payload);
 
     // Validate required fields
-    if (!payload.client || !payload.title || !payload.risk || !payload.date || !payload.startTime || !payload.endTime || !payload.userId) {
+    if (!payload.client || !payload.title || !payload.risk || !payload.date || !payload.startTime || !payload.endTime) {
       return new Response(
         JSON.stringify({ 
-          error: 'Missing required fields. Required: client, title, risk, date, startTime, endTime, userId' 
+          error: 'Missing required fields. Required: client, title, risk, date, startTime, endTime' 
         }),
         { 
           status: 400, 
@@ -81,7 +96,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from('calendar_events')
       .insert({
-        user_id: payload.userId,
+        user_id: userId,
         client: payload.client.trim(),
         title: payload.title.trim(),
         risk: payload.risk,
