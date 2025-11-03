@@ -489,14 +489,14 @@ const ClientChat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-calm-mint via-background to-calm-lavender">
       <Navbar />
 
       <main className="container mx-auto px-4 pt-24 pb-8">
         <div className="max-w-6xl mx-auto fade-in">
-          <div className="mb-6">
-            <h1 className="text-4xl font-bold mb-2">Client Support Portal</h1>
-            <p className="text-muted-foreground text-lg">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Client Support Portal</h1>
+            <p className="text-muted-foreground text-lg leading-relaxed">
               Safe, AI-guided access to mental health information and coping strategies
             </p>
           </div>
@@ -508,25 +508,25 @@ const ClientChat = () => {
           )}
 
           <div className="grid gap-6 lg:grid-cols-4">
-            <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] shadow-lg rounded-2xl border-border/50">
-              <CardHeader className="pb-4 border-b">
+            <Card className="lg:col-span-3 flex flex-col min-h-[calc(100vh-220px)] glass-light rounded-3xl border-border/30" style={{ boxShadow: 'var(--shadow-soft)' }}>
+              <CardHeader className="pb-5 border-b border-border/30">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-                        {humanSupportMode ? <MessageSquare className="w-6 h-6 text-primary-foreground" /> : <Bot className="w-6 h-6 text-primary-foreground" />}
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-primary to-accent flex items-center justify-center" style={{ boxShadow: 'var(--shadow-glow)' }}>
+                        {humanSupportMode ? <MessageSquare className="w-7 h-7 text-primary-foreground" /> : <Bot className="w-7 h-7 text-primary-foreground" />}
                       </div>
                       <div>
-                        <CardTitle className="text-xl mb-1">
+                        <CardTitle className="text-xl mb-1.5 font-bold">
                           {humanSupportMode ? "Support Worker Chat" : "Mental Health Support Chat"}
                         </CardTitle>
-                        <CardDescription className="text-sm">
+                        <CardDescription className="text-sm leading-relaxed">
                           {humanSupportMode ? "Connected with human support" : "Ask questions, learn coping strategies, and access resources"}
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       {!humanSupportMode && (
-                        <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading} className="shadow-sm">
+                        <Button variant="outline" onClick={requestHumanSupport} disabled={isLoading} className="rounded-xl hover:scale-105 transition-transform duration-200" style={{ boxShadow: 'var(--shadow-card)' }}>
                           <MessageSquare className="w-4 h-4 mr-2" />
                           <span className="hidden sm:inline">Talk to </span>Support Worker
                         </Button>
@@ -534,12 +534,12 @@ const ClientChat = () => {
                       {humanSupportMode && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="rounded-xl">
                               <X className="w-4 h-4 mr-2" />
                               Close Chat
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="rounded-2xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>End chat and return to AI assistant?</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -547,8 +547,8 @@ const ClientChat = () => {
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleCloseHumanSupport}>
+                              <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleCloseHumanSupport} className="rounded-xl">
                                 End Chat
                               </AlertDialogAction>
                             </AlertDialogFooter>
@@ -559,53 +559,54 @@ const ClientChat = () => {
                   </div>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col gap-6 overflow-hidden p-6">
+              <CardContent className="flex-1 flex flex-col gap-6 overflow-hidden p-8">
                 <ScrollArea ref={scrollRef} className="flex-1 pr-4">
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
+                        className={`flex gap-3.5 ${message.role === "user" ? "justify-end" : "justify-start"} message-slide-in`}
                       >
                         {message.role === "assistant" && (
-                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                             <Bot className="w-5 h-5 text-primary" />
                           </div>
                         )}
                         <div
-                          className={`rounded-2xl px-5 py-3.5 max-w-[85%] sm:max-w-[75%] shadow-sm ${
+                          className={`rounded-3xl px-6 py-4 max-w-[85%] sm:max-w-[75%] transition-all duration-200 hover:scale-[1.01] ${
                             message.role === "user" 
-                              ? "bg-primary text-primary-foreground" 
-                              : "bg-muted/80 border border-border/50"
+                              ? "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground" 
+                              : "glass-light border border-border/20"
                           }`}
+                          style={message.role === "assistant" ? { boxShadow: 'var(--shadow-card)' } : { boxShadow: 'var(--shadow-glow)' }}
                         >
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                          <p className="text-xs opacity-70 mt-2.5">{new Date(message.timestamp).toLocaleTimeString()}</p>
+                          <p className="text-[15px] whitespace-pre-wrap leading-relaxed font-medium">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-3">{new Date(message.timestamp).toLocaleTimeString()}</p>
                         </div>
                         {message.role === "user" && (
-                          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 shadow-sm">
+                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                             <User className="w-5 h-5 text-accent" />
                           </div>
                         )}
                       </div>
                     ))}
                     {isLoading && (
-                      <div className="flex gap-3 justify-start animate-fade-in">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="flex gap-3.5 justify-start message-slide-in">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0" style={{ boxShadow: 'var(--shadow-card)' }}>
                           <Bot className="w-5 h-5 text-primary" />
                         </div>
-                        <div className="rounded-2xl px-5 py-3.5 bg-muted/80 border border-border/50 shadow-sm">
+                        <div className="rounded-3xl px-6 py-4 glass-light border border-border/20" style={{ boxShadow: 'var(--shadow-card)' }}>
                           <div className="flex gap-1.5">
                             <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "0ms" }}
                             />
                             <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "150ms" }}
                             />
                             <div
-                              className="w-2 h-2 rounded-full bg-primary/50 animate-bounce"
+                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "300ms" }}
                             />
                           </div>
@@ -616,13 +617,14 @@ const ClientChat = () => {
                   </div>
                 </ScrollArea>
 
-                <div className="border-t pt-4">
-                  <div className="flex flex-wrap gap-2 mb-4">
+                <div className="border-t border-border/30 pt-5">
+                  <div className="flex flex-wrap gap-2.5 mb-5">
                     {quickReplies.map((reply) => (
                       <Badge
                         key={reply.id}
                         variant="outline"
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all hover:shadow-sm px-3 py-1.5"
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105 px-4 py-2 rounded-full text-sm font-medium"
+                        style={{ boxShadow: 'var(--shadow-card)' }}
                         onClick={() => handleQuickReply(reply.query)}
                         role="button"
                         tabIndex={0}
@@ -633,7 +635,7 @@ const ClientChat = () => {
                     ))}
                   </div>
 
-                  <div className="flex gap-2.5">
+                  <div className="flex gap-3">
                     <Input
                       placeholder="Type your message..."
                       value={input}
@@ -641,7 +643,7 @@ const ClientChat = () => {
                       onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                       disabled={isLoading || isRecording}
                       aria-label="Chat message"
-                      className="rounded-xl shadow-sm"
+                      className="pill-input text-base h-12"
                     />
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
@@ -649,34 +651,36 @@ const ClientChat = () => {
                       size="icon"
                       aria-label={isRecording ? "Stop recording" : "Record audio"}
                       disabled={isLoading}
-                      className="rounded-xl shadow-sm shrink-0"
+                      className="rounded-2xl shrink-0 w-12 h-12 hover:scale-105 transition-transform duration-200"
+                      style={{ boxShadow: 'var(--shadow-card)' }}
                     >
-                      {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                     </Button>
                     <Button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading || isRecording}
                       size="icon"
                       aria-label="Send message"
-                      className="rounded-xl shadow-sm shrink-0"
+                      className="rounded-2xl shrink-0 w-12 h-12 hover:scale-105 transition-transform duration-200"
+                      style={{ boxShadow: 'var(--shadow-glow)' }}
                     >
-                      <Send className="w-4 h-4" />
+                      <Send className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Card className="cursor-pointer hover:shadow-lg transition-all duration-300 rounded-2xl border-border/50 shadow-md">
-                    <CardHeader className="pb-3">
+                  <Card className="cursor-pointer hover:scale-105 transition-all duration-300 rounded-3xl border-border/30 glass-light hover:shadow-lg">
+                    <CardHeader className="pb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shadow-sm">
-                          <Library className="w-5 h-5 text-primary" />
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center" style={{ boxShadow: 'var(--shadow-card)' }}>
+                          <Library className="w-6 h-6 text-primary" />
                         </div>
-                        <CardTitle className="text-base font-semibold">Coping Library</CardTitle>
+                        <CardTitle className="text-base font-bold">Coping Library</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
@@ -684,37 +688,38 @@ const ClientChat = () => {
                     </CardContent>
                   </Card>
                 </SheetTrigger>
-                <SheetContent>
+                <SheetContent className="rounded-l-3xl">
                   <SheetHeader>
-                    <SheetTitle>Coping Strategies</SheetTitle>
-                    <SheetDescription>Click any technique to add it to the chat</SheetDescription>
+                    <SheetTitle className="text-xl">Coping Strategies</SheetTitle>
+                    <SheetDescription className="text-base">Click any technique to add it to the chat</SheetDescription>
                   </SheetHeader>
                   <ScrollArea className="h-[calc(100vh-150px)] mt-6">
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {mockPsychoedSnippets.map((snippet) => (
                         <Card
                           key={snippet.id}
-                          className="cursor-pointer hover:bg-accent/50 transition-colors"
+                          className="cursor-pointer hover:scale-[1.02] transition-all duration-200 rounded-2xl glass-light border-border/30"
+                          style={{ boxShadow: 'var(--shadow-card)' }}
                           onClick={() => handleInsertSnippet(snippet.content)}
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => e.key === "Enter" && handleInsertSnippet(snippet.content)}
                         >
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">{snippet.title}</CardTitle>
-                            <div className="flex gap-2">
-                              <Badge variant="outline" className="capitalize text-xs">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-semibold">{snippet.title}</CardTitle>
+                            <div className="flex gap-2 mt-2">
+                              <Badge variant="outline" className="capitalize text-xs rounded-full">
                                 {snippet.category}
                               </Badge>
                               {snippet.duration && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs rounded-full">
                                   {snippet.duration}
                                 </Badge>
                               )}
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-xs text-muted-foreground line-clamp-3">{snippet.content}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{snippet.content}</p>
                           </CardContent>
                         </Card>
                       ))}
@@ -724,28 +729,32 @@ const ClientChat = () => {
               </Sheet>
 
               <Card
-                className="cursor-pointer hover:shadow-lg transition-all duration-300 rounded-2xl border-destructive/30 bg-gradient-to-br from-destructive/5 to-destructive/10 shadow-md"
+                className="cursor-pointer hover:scale-105 transition-all duration-300 rounded-3xl border-destructive/20 bg-gradient-to-br from-destructive/8 to-destructive/5 glass-light"
+                style={{ boxShadow: 'var(--shadow-card)' }}
                 onClick={() => setShowContacts(true)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === "Enter" && setShowContacts(true)}
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-destructive/20 flex items-center justify-center shadow-sm">
-                      <Phone className="w-5 h-5 text-destructive" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-destructive/25 to-destructive/15 flex items-center justify-center" style={{ boxShadow: 'var(--shadow-card)' }}>
+                      <Phone className="w-6 h-6 text-destructive" />
                     </div>
-                    <CardTitle className="text-base font-semibold text-destructive">Crisis Contacts</CardTitle>
+                    <CardTitle className="text-base font-bold text-destructive">Crisis Contacts</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground leading-relaxed">24/7 emergency and crisis support</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed font-medium">24/7 emergency and crisis support</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-accent/5 border-accent rounded-2xl shadow-md">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">Important</CardTitle>
+              <Card className="bg-gradient-to-br from-accent/8 to-accent/5 border-accent/30 rounded-3xl glass-light" style={{ boxShadow: 'var(--shadow-card)' }}>
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-accent"></span>
+                    Important
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
                   <p className="text-xs text-muted-foreground leading-relaxed">
@@ -760,28 +769,28 @@ const ClientChat = () => {
       </main>
 
       <Sheet open={showContacts} onOpenChange={setShowContacts}>
-        <SheetContent>
+        <SheetContent className="rounded-l-3xl">
           <SheetHeader>
-            <SheetTitle>Crisis Support Contacts</SheetTitle>
-            <SheetDescription>24/7 support services available in Australia</SheetDescription>
+            <SheetTitle className="text-xl">Crisis Support Contacts</SheetTitle>
+            <SheetDescription className="text-base">24/7 support services available in Australia</SheetDescription>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-150px)] mt-6">
             <div className="space-y-4">
               {crisisContactsAU.map((contact) => (
-                <Card key={contact.id}>
-                  <CardHeader>
+                <Card key={contact.id} className="rounded-2xl glass-light border-border/30" style={{ boxShadow: 'var(--shadow-card)' }}>
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-base">{contact.name}</CardTitle>
-                      <Badge variant={contact.available === "24/7" ? "default" : "secondary"}>
+                      <CardTitle className="text-base font-bold">{contact.name}</CardTitle>
+                      <Badge variant={contact.available === "24/7" ? "default" : "secondary"} className="rounded-full">
                         {contact.available}
                       </Badge>
                     </div>
-                    <CardDescription>{contact.description}</CardDescription>
+                    <CardDescription className="leading-relaxed">{contact.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Button variant="outline" size="sm" className="w-full rounded-xl hover:scale-105 transition-transform duration-200" asChild style={{ boxShadow: 'var(--shadow-card)' }}>
                       <a href={`tel:${contact.phone.replace(/\s/g, "")}`}>
-                        <Phone className="w-3 h-3 mr-2" />
+                        <Phone className="w-4 h-4 mr-2" />
                         {contact.phone}
                       </a>
                     </Button>
