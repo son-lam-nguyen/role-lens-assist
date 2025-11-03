@@ -16,10 +16,6 @@ const Landing = () => {
 
       <main className="container mx-auto px-4 py-20">
         <section className="text-center mb-20 space-y-8 fade-in">
-          <div className="inline-block mb-6 px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-medium shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block animate-pulse mr-2"></span>
-            AI-Powered Support Work Platform
-          </div>
           <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4">
             Empowering Support Work with AI
           </h2>
@@ -60,12 +56,6 @@ const Landing = () => {
           />
         </section>
 
-        <section className="mt-20 text-center fade-in" style={{ animationDelay: "0.4s" }}>
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-accent/20 to-primary/20 border border-accent/30 text-accent text-sm font-medium shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            Australian-focused resources & crisis contacts
-          </div>
-        </section>
       </main>
 
       <footer className="border-t mt-16 py-8">
