@@ -3,8 +3,8 @@ import { RoleCard } from "@/components/supportlens/RoleCard";
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 animate-fadeIn">
-      <header className="border-b bg-card/80 backdrop-blur-lg sticky top-0 z-50">
+    <div className="min-h-screen healthcare-bg animate-fadeIn">
+      <header className="border-b glass-card sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center">
           <div className="flex items-center gap-2">
             <Stethoscope className="w-6 h-6 text-primary" />
@@ -13,16 +13,16 @@ const Landing = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16">
-        <section className="text-center mb-16 space-y-6 fade-in">
-          <div className="inline-block mb-4 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+      <main className="container mx-auto px-4 py-20">
+        <section className="text-center mb-20 space-y-8 fade-in">
+          <div className="inline-block mb-6 px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-medium shadow-sm">
             <span className="w-2 h-2 rounded-full bg-primary inline-block animate-pulse mr-2"></span>
             AI-Powered Support Work Platform
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4">
             Empowering Support Work with AI
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4">
             Streamline documentation, access evidence-based guidelines, and provide safe client support
             with our dual-role platform.
           </p>

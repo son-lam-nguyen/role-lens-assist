@@ -27,10 +27,10 @@ export const RoleCard = ({ title, description, icon: Icon, route, features, butt
   };
   
   return (
-    <Card className="card-hover border-2 hover:border-primary/20 bg-gradient-to-br from-card to-primary/5">
+    <Card className="card-hover glass-card hover:shadow-2xl transition-all duration-300">
       <CardHeader>
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 shadow-lg">
-          <Icon className="w-7 h-7 text-white" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-5 shadow-xl">
+          <Icon className="w-8 h-8 text-white" />
         </div>
         <CardTitle className="text-2xl font-bold">{title}</CardTitle>
         <CardDescription className="text-base leading-relaxed">{description}</CardDescription>
