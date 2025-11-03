@@ -1,9 +1,10 @@
 import { Stethoscope, MessageCircle, UserCircle } from "lucide-react";
 import { RoleCard } from "@/components/supportlens/RoleCard";
+import mentalHealthBg from "@/assets/mental-health-bg.jpg";
 
 const Landing = () => {
   return (
-    <div className="min-h-screen healthcare-bg animate-fadeIn">
+    <div className="min-h-screen healthcare-bg animate-fadeIn" style={{ backgroundImage: `url(${mentalHealthBg})` }}>
       <header className="border-b glass-card sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center">
           <div className="flex items-center gap-2">
