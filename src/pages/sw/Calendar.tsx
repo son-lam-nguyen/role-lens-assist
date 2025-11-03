@@ -90,14 +90,14 @@ const Calendar = () => {
     }
   };
 
-  const getRiskDotColor = (risk: CaseRisk) => {
+  const getRiskBgColor = (risk: CaseRisk) => {
     switch (risk) {
       case "high":
-        return "bg-red-500";
+        return "bg-red-500/90 hover:bg-red-500 text-white";
       case "moderate":
-        return "bg-blue-500";
+        return "bg-blue-500/20 hover:bg-blue-500/30 text-foreground";
       case "low":
-        return "bg-gray-400";
+        return "bg-muted/50 hover:bg-muted text-foreground";
     }
   };
 
@@ -326,16 +326,15 @@ const Calendar = () => {
                       dayEvents.map((event) => (
                         <div 
                           key={event.id}
-                          className="group p-2 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors relative"
+                          className={`group p-2 rounded-lg cursor-pointer transition-colors relative ${getRiskBgColor(event.risk)}`}
                           onClick={() => handleEventClick(event)}
                         >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getRiskDotColor(event.risk)}`} />
+                          <div className="flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">
                                 {event.client}
                               </p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-[10px] opacity-80">
                                 {format(new Date(event.startISO), "HH:mm")}–{format(new Date(event.endISO), "HH:mm")}
                               </p>
                             </div>
