@@ -37,20 +37,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get userId from query parameters
+    // Get userId from query parameters (optional)
     const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
+    let userId = url.searchParams.get('userId');
 
+    // Initialize Supabase client with service role key for admin operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // If no userId provided, get the first available user
     if (!userId) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing userId query parameter' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1)
+        .single();
+
+      if (profileError || !profiles) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'No user found. Please provide userId query parameter or ensure at least one user exists.' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
+      userId = profiles.id;
+      console.log('No userId provided, using default user:', userId);
     }
 
     // Parse request body
@@ -87,10 +104,35 @@ Deno.serve(async (req) => {
     const startISO = `${payload.date}T${payload.startTime}:00`;
     const endISO = `${payload.date}T${payload.endTime}:00`;
 
-    // Initialize Supabase client with service role key for admin operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Check if client exists, if not create one
+    const { data: existingClient } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('name', payload.client.trim())
+      .single();
+
+    if (!existingClient) {
+      // Auto-create client if doesn't exist
+      const { error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          user_id: userId,
+          name: payload.client.trim(),
+          age: 0, // Default age
+          gender: 'Not specified',
+          contact: 'Not provided',
+          risk_level: payload.risk,
+          assigned_worker: 'System',
+          notes: 'Auto-created from calendar webhook'
+        });
+
+      if (clientError) {
+        console.error('Error creating client:', clientError);
+      } else {
+        console.log('Auto-created new client:', payload.client.trim());
+      }
+    }
 
     // Insert calendar event
     const { data, error } = await supabase
