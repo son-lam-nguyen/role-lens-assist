@@ -218,31 +218,20 @@ export default function EnvironmentScan() {
         {/* Results */}
         {result && result.summary && (
           <div className="space-y-5">
+            {/* Uploaded Image */}
+            <Card className="overflow-hidden animate-scale-in">
+              <img
+                src={image!}
+                alt="Analyzed environment"
+                className="w-full h-64 object-cover"
+              />
+            </Card>
+
             {/* Hero Stats Card */}
             <Card className="relative overflow-hidden border-0 shadow-lg animate-scale-in">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
               <div className="relative p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <Home className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold capitalize">
-                        {result.environment_context}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">Environment Analysis</p>
-                    </div>
-                  </div>
-                  <Badge 
-                    variant="default" 
-                    className="h-8 px-4 bg-primary/10 text-primary border-primary/20"
-                  >
-                    Complete
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="relative group">
                     <div className="absolute inset-0 bg-destructive/5 rounded-2xl transition-all group-hover:bg-destructive/10" />
                     <div className="relative p-4 text-center space-y-1">
