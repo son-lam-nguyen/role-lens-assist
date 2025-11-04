@@ -65,11 +65,24 @@ export default function EnvironmentScan() {
         throw new Error(`Webhook error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      console.log("Raw webhook response:", rawData);
+      
+      // Extract data from n8n array response structure: [{ output: {...} }]
+      let data;
+      if (Array.isArray(rawData) && rawData.length > 0 && rawData[0].output) {
+        data = rawData[0].output;
+      } else if (rawData.output) {
+        data = rawData.output;
+      } else {
+        data = rawData;
+      }
+      
+      console.log("Extracted data:", data);
       
       // Validate response structure
       if (!data || !data.summary || !data.hazards || !data.suggestions) {
-        console.error("Invalid response structure:", data);
+        console.error("Invalid response structure after extraction:", data);
         throw new Error("Invalid response format from analysis service");
       }
       
