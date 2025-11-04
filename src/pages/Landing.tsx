@@ -16,15 +16,13 @@ const Landing = () => {
 
       <main className="container mx-auto px-4 py-20">
         <section className="text-center mb-20 space-y-8 fade-in">
-          <div className="frosted-panel rounded-3xl py-12 px-6 max-w-5xl mx-auto">
-            <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4 text-glow-soft">
-              Empowering Support Work with AI
-            </h2>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4 text-glow-subtle mt-8">
-              Streamline documentation, access evidence-based guidelines, and provide safe client support
-              with our dual-role platform.
-            </p>
-          </div>
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight px-4">
+            Empowering Support Work with AI
+          </h2>
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light px-4">
+            Streamline documentation, access evidence-based guidelines, and provide safe client support
+            with our dual-role platform.
+          </p>
         </section>
 
         <section className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto fade-in" style={{ animationDelay: "0.2s" }}>
