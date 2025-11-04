@@ -7,20 +7,23 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AnalysisResult {
+  status: string;
+  environment_context: string;
   hazards: Array<{
-    type: string;
-    severity: "low" | "medium" | "high" | "critical";
-    description: string;
-    location?: string;
-  }>;
-  tasks: Array<{
     title: string;
-    duration: 5 | 10 | 20;
-    priority: "low" | "medium" | "high";
-    description: string;
+    severity: "low" | "medium" | "high" | "critical";
+    reason: string;
   }>;
-  overallSafety: "safe" | "concerns" | "unsafe";
-  summary: string;
+  suggestions: Array<{
+    task: string;
+    duration_minutes: number;
+    reason: string;
+  }>;
+  summary: {
+    hazard_count: number;
+    suggestion_count: number;
+  };
+  tips: string[];
 }
 
 export default function EnvironmentScan() {
@@ -51,11 +54,19 @@ export default function EnvironmentScan() {
 
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("analyze-environment", {
-        body: { image },
+      const response = await fetch("https://n8n.birthdaymessaging.space/webhook/envsafe-scan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Webhook error: ${response.status}`);
+      }
+
+      const data = await response.json();
       setResult(data);
       toast.success("Analysis complete!");
     } catch (error) {
@@ -79,16 +90,6 @@ export default function EnvironmentScan() {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "destructive";
-      case "medium":
-        return "warning";
-      default:
-        return "secondary";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background pb-20 px-4 sm:px-6">
@@ -197,28 +198,28 @@ export default function EnvironmentScan() {
         {/* Results */}
         {result && (
           <div className="space-y-6 fade-in">
-            {/* Overall Safety */}
+            {/* Environment Context & Summary */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Overall Assessment</h2>
-                <Badge
-                  variant={
-                    result.overallSafety === "safe"
-                      ? "default"
-                      : result.overallSafety === "concerns"
-                      ? "secondary"
-                      : "destructive"
-                  }
-                  className="text-sm"
-                >
-                  {result.overallSafety === "safe"
-                    ? "Safe"
-                    : result.overallSafety === "concerns"
-                    ? "Minor Concerns"
-                    : "Unsafe"}
+                <h2 className="text-xl font-semibold">Environment Analysis</h2>
+                <Badge variant="default" className="text-sm capitalize">
+                  {result.environment_context}
                 </Badge>
               </div>
-              <p className="text-muted-foreground">{result.summary}</p>
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-destructive">
+                    {result.summary.hazard_count}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Hazards Found</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-success">
+                    {result.summary.suggestion_count}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Suggestions</div>
+                </div>
+              </div>
             </Card>
 
             {/* Hazards */}
@@ -235,19 +236,14 @@ export default function EnvironmentScan() {
                       className="p-4 rounded-lg border border-border bg-card space-y-2"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold">{hazard.type}</h3>
+                        <h3 className="font-semibold">{hazard.title}</h3>
                         <Badge variant={getSeverityColor(hazard.severity) as any}>
                           {hazard.severity}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {hazard.description}
+                        {hazard.reason}
                       </p>
-                      {hazard.location && (
-                        <p className="text-xs text-muted-foreground">
-                          Location: {hazard.location}
-                        </p>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -261,30 +257,43 @@ export default function EnvironmentScan() {
                 <h2 className="text-xl font-semibold">Suggested Tasks</h2>
               </div>
               <div className="space-y-3">
-                {result.tasks.map((task, idx) => (
+                {result.suggestions.map((suggestion, idx) => (
                   <div
                     key={idx}
                     className="p-4 rounded-lg border border-border bg-card space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold">{task.title}</h3>
-                      <div className="flex gap-2">
-                        <Badge variant="outline" className="whitespace-nowrap">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {task.duration}min
-                        </Badge>
-                        <Badge variant={getPriorityColor(task.priority) as any}>
-                          {task.priority}
-                        </Badge>
-                      </div>
+                      <h3 className="font-semibold">{suggestion.task}</h3>
+                      <Badge variant="outline" className="whitespace-nowrap">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {suggestion.duration_minutes}min
+                      </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {task.description}
+                      {suggestion.reason}
                     </p>
                   </div>
                 ))}
               </div>
             </Card>
+
+            {/* Safety Tips */}
+            {result.tips && result.tips.length > 0 && (
+              <Card className="p-6 bg-accent/10 border-accent/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-semibold">Safety Tips</h2>
+                </div>
+                <ul className="space-y-2">
+                  {result.tips.map((tip, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
 
             {/* Actions */}
             <div className="flex gap-2">
@@ -300,9 +309,10 @@ export default function EnvironmentScan() {
               </Button>
               <Button
                 onClick={() => {
+                  const shareText = `Environment Scan: ${result.environment_context}\n${result.summary.hazard_count} hazards found, ${result.summary.suggestion_count} suggestions provided.`;
                   navigator.share?.({
                     title: "Environment Scan Results",
-                    text: result.summary,
+                    text: shareText,
                   }).catch(() => {
                     toast.info("Sharing not supported on this device");
                   });
