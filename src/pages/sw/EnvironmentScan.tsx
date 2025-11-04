@@ -66,11 +66,19 @@ export default function EnvironmentScan() {
       }
 
       const data = await response.json();
+      
+      // Validate response structure
+      if (!data || !data.summary || !data.hazards || !data.suggestions) {
+        console.error("Invalid response structure:", data);
+        throw new Error("Invalid response format from analysis service");
+      }
+      
       setResult(data);
       toast.success("Analysis complete!");
     } catch (error) {
       console.error("Analysis error:", error);
       toast.error("Failed to analyze environment. Please try again.");
+      setResult(null);
     } finally {
       setAnalyzing(false);
     }
@@ -195,7 +203,7 @@ export default function EnvironmentScan() {
         )}
 
         {/* Results */}
-        {result && (
+        {result && result.summary && (
           <div className="space-y-5">
             {/* Hero Stats Card */}
             <Card className="relative overflow-hidden border-0 shadow-lg animate-scale-in">
@@ -256,7 +264,7 @@ export default function EnvironmentScan() {
             </Card>
 
             {/* Hazards Section */}
-            {result.hazards.length > 0 && (
+            {result.hazards && result.hazards.length > 0 && (
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-2 px-1">
                   <div className="w-1 h-6 bg-destructive rounded-full" />
@@ -306,14 +314,15 @@ export default function EnvironmentScan() {
             )}
 
             {/* Quick Tasks - Grouped by Duration */}
-            <div className="space-y-3 animate-fade-in" style={{ animationDelay: "200ms" }}>
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-1 h-6 bg-success rounded-full" />
-                <h3 className="text-lg font-bold">Quick Improvements</h3>
-              </div>
-              
-              {[5, 10, 15, 20].map(duration => {
-                const tasksForDuration = result.suggestions.filter(
+            {result.suggestions && result.suggestions.length > 0 && (
+              <div className="space-y-3 animate-fade-in" style={{ animationDelay: "200ms" }}>
+                <div className="flex items-center gap-2 px-1">
+                  <div className="w-1 h-6 bg-success rounded-full" />
+                  <h3 className="text-lg font-bold">Quick Improvements</h3>
+                </div>
+                
+                {[5, 10, 15, 20].map(duration => {
+                  const tasksForDuration = result.suggestions.filter(
                   s => s.duration_minutes === duration
                 );
                 
@@ -366,8 +375,9 @@ export default function EnvironmentScan() {
                     ))}
                   </div>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
 
             {/* Safety Tips */}
             {result.tips && result.tips.length > 0 && (
