@@ -53,12 +53,17 @@ export default function EnvironmentScan() {
 
     setAnalyzing(true);
     try {
+      // Convert base64 to blob
+      const base64Response = await fetch(image);
+      const blob = await base64Response.blob();
+      
+      // Create FormData and append only the image
+      const formData = new FormData();
+      formData.append("image", blob, "environment.jpg");
+
       const response = await fetch("https://n8n.birthdaymessaging.space/webhook/envsafe-scan", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ image }),
+        body: formData,
       });
 
       if (!response.ok) {
