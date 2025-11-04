@@ -9,7 +9,8 @@ import {
   MessageSquare,
   BookOpen,
   AudioLines,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Camera
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ import {
 const navItems = [
   { title: "Overview", url: "/sw", icon: LayoutDashboard, color: "text-primary" },
   { title: "Upload & Analyze", url: "/sw/upload", icon: Upload, color: "text-primary" },
+  { title: "Environment Scan", url: "/sw/environment-scan", icon: Camera, color: "text-accent" },
   { title: "Client List", url: "/sw/clients", icon: Users, color: "text-blue-600" },
   { title: "Similar Cases", url: "/sw/cases", icon: Search, color: "text-accent" },
   { title: "Calendar", url: "/sw/calendar", icon: Calendar, color: "text-purple-600" },

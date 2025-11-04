@@ -18,6 +18,7 @@ import Messages from "./pages/sw/Messages";
 import Library from "./pages/sw/Library";
 import Recordings from "./pages/sw/Recordings";
 import Settings from "./pages/sw/Settings";
+import EnvironmentScan from "./pages/sw/EnvironmentScan";
 import ClientChat from "./pages/ClientChat";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="library" element={<Library />} />
               <Route path="recordings" element={<Recordings />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="environment-scan" element={<EnvironmentScan />} />
             </Route>
             <Route path="/client" element={<ClientChat />} />
             <Route path="/admin" element={<Admin />} />
