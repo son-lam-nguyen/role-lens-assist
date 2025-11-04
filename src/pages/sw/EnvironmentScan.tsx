@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, AlertTriangle, CheckCircle2, Clock, Shield, Zap, Home, TrendingUp, Share2 } from "lucide-react";
+import { Camera, Upload, AlertTriangle, CheckCircle2, Clock, Shield, Zap, Home, TrendingUp, Share2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface AnalysisResult {
@@ -30,6 +31,7 @@ export default function EnvironmentScan() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [showImageDialog, setShowImageDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -224,7 +226,10 @@ export default function EnvironmentScan() {
         {result && result.summary && (
           <div className="space-y-5">
             {/* Uploaded Image */}
-            <Card className="overflow-hidden animate-scale-in">
+            <Card 
+              className="overflow-hidden animate-scale-in cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setShowImageDialog(true)}
+            >
               <img
                 src={image!}
                 alt="Analyzed environment"
@@ -454,6 +459,27 @@ export default function EnvironmentScan() {
           </div>
         )}
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="max-w-4xl w-full p-0 overflow-hidden">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 bg-background/80 hover:bg-background"
+              onClick={() => setShowImageDialog(false)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <img
+              src={image!}
+              alt="Full size environment"
+              className="w-full h-auto max-h-[90vh] object-contain"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
