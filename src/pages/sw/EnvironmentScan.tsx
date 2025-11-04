@@ -168,8 +168,7 @@ export default function EnvironmentScan() {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={!consentGiven}
-              variant="outline"
-              className="w-full h-32 flex flex-col gap-2"
+              className="w-full h-32 flex flex-col gap-2 bg-gradient-to-br from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white"
               size="lg"
             >
               <Upload className="w-8 h-8" />
