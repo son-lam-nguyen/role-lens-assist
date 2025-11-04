@@ -1,10 +1,9 @@
 import { useState, useRef } from "react";
-import { Camera, Upload, AlertTriangle, CheckCircle2, Clock, Shield } from "lucide-react";
+import { Camera, Upload, AlertTriangle, CheckCircle2, Clock, Shield, Zap, Home, TrendingUp, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AnalysisResult {
   status: string;
@@ -197,129 +196,242 @@ export default function EnvironmentScan() {
 
         {/* Results */}
         {result && (
-          <div className="space-y-6 fade-in">
-            {/* Environment Context & Summary */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Environment Analysis</h2>
-                <Badge variant="default" className="text-sm capitalize">
-                  {result.environment_context}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-muted/50">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-destructive">
-                    {result.summary.hazard_count}
+          <div className="space-y-5">
+            {/* Hero Stats Card */}
+            <Card className="relative overflow-hidden border-0 shadow-lg animate-scale-in">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent" />
+              <div className="relative p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <Home className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold capitalize">
+                        {result.environment_context}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">Environment Analysis</p>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">Hazards Found</div>
+                  <Badge 
+                    variant="default" 
+                    className="h-8 px-4 bg-primary/10 text-primary border-primary/20"
+                  >
+                    Complete
+                  </Badge>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-success">
-                    {result.summary.suggestion_count}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-destructive/5 rounded-2xl transition-all group-hover:bg-destructive/10" />
+                    <div className="relative p-4 text-center space-y-1">
+                      <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-destructive/10 flex items-center justify-center">
+                        <AlertTriangle className="w-5 h-5 text-destructive" />
+                      </div>
+                      <div className="text-3xl font-bold text-destructive">
+                        {result.summary.hazard_count}
+                      </div>
+                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Hazards
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">Suggestions</div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-success/5 rounded-2xl transition-all group-hover:bg-success/10" />
+                    <div className="relative p-4 text-center space-y-1">
+                      <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-success/10 flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-success" />
+                      </div>
+                      <div className="text-3xl font-bold text-success">
+                        {result.summary.suggestion_count}
+                      </div>
+                      <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Actions
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>
 
-            {/* Hazards */}
+            {/* Hazards Section */}
             {result.hazards.length > 0 && (
-              <Card className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  <h2 className="text-xl font-semibold">Detected Hazards</h2>
+              <div className="space-y-3 animate-fade-in">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="w-1 h-6 bg-destructive rounded-full" />
+                  <h3 className="text-lg font-bold">Priority Hazards</h3>
                 </div>
                 <div className="space-y-3">
-                  {result.hazards.map((hazard, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 rounded-lg border border-border bg-card space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold">{hazard.title}</h3>
-                        <Badge variant={getSeverityColor(hazard.severity) as any}>
-                          {hazard.severity}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {hazard.reason}
-                      </p>
-                    </div>
-                  ))}
+                  {result.hazards.map((hazard, idx) => {
+                    const severityConfig = {
+                      critical: { bg: "bg-destructive/10", border: "border-destructive/30", icon: "🔴" },
+                      high: { bg: "bg-destructive/10", border: "border-destructive/30", icon: "🔴" },
+                      medium: { bg: "bg-warning/10", border: "border-warning/30", icon: "🟡" },
+                      low: { bg: "bg-muted/50", border: "border-border", icon: "🟢" }
+                    }[hazard.severity] || { bg: "bg-muted/50", border: "border-border", icon: "⚪" };
+
+                    return (
+                      <Card
+                        key={idx}
+                        className={`overflow-hidden border-2 ${severityConfig.border} transition-all hover:scale-[1.02] hover:shadow-md`}
+                        style={{ animationDelay: `${idx * 100}ms` }}
+                      >
+                        <div className={`${severityConfig.bg} p-4 space-y-2`}>
+                          <div className="flex items-start gap-3">
+                            <span className="text-2xl flex-shrink-0 mt-0.5">{severityConfig.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <h4 className="font-semibold text-base leading-tight">
+                                  {hazard.title}
+                                </h4>
+                                <Badge 
+                                  variant={getSeverityColor(hazard.severity) as any}
+                                  className="uppercase text-xs font-bold shrink-0"
+                                >
+                                  {hazard.severity}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                {hazard.reason}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
-              </Card>
+              </div>
             )}
 
-            {/* Suggested Tasks */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="w-5 h-5 text-success" />
-                <h2 className="text-xl font-semibold">Suggested Tasks</h2>
+            {/* Quick Tasks - Grouped by Duration */}
+            <div className="space-y-3 animate-fade-in" style={{ animationDelay: "200ms" }}>
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-1 h-6 bg-success rounded-full" />
+                <h3 className="text-lg font-bold">Quick Improvements</h3>
               </div>
-              <div className="space-y-3">
-                {result.suggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-lg border border-border bg-card space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold">{suggestion.task}</h3>
-                      <Badge variant="outline" className="whitespace-nowrap">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {suggestion.duration_minutes}min
-                      </Badge>
+              
+              {[5, 10, 15, 20].map(duration => {
+                const tasksForDuration = result.suggestions.filter(
+                  s => s.duration_minutes === duration
+                );
+                
+                if (tasksForDuration.length === 0) return null;
+
+                const durationConfig = {
+                  5: { color: "success", icon: Zap, label: "Quick Win" },
+                  10: { color: "primary", icon: Clock, label: "Short Task" },
+                  15: { color: "warning", icon: Clock, label: "Medium Task" },
+                  20: { color: "warning", icon: Clock, label: "Longer Task" }
+                }[duration] || { color: "muted", icon: Clock, label: "Task" };
+
+                const IconComponent = durationConfig.icon;
+
+                return (
+                  <div key={duration} className="space-y-2">
+                    <div className="flex items-center gap-2 px-2">
+                      <IconComponent className={`w-4 h-4 text-${durationConfig.color}`} />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {durationConfig.label}s • {duration} min
+                      </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {suggestion.reason}
-                    </p>
+                    {tasksForDuration.map((task, idx) => (
+                      <Card
+                        key={idx}
+                        className="border-l-4 border-l-success/50 hover:border-l-success transition-all hover:shadow-md group"
+                      >
+                        <div className="p-4 space-y-2">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              <CheckCircle2 className="w-4 h-4 text-success" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-base mb-1 leading-tight">
+                                {task.task}
+                              </h4>
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                {task.reason}
+                              </p>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className="shrink-0 border-success/30 text-success"
+                            >
+                              {task.duration_minutes}m
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </Card>
+                );
+              })}
+            </div>
 
             {/* Safety Tips */}
             {result.tips && result.tips.length > 0 && (
-              <Card className="p-6 bg-accent/10 border-accent/20">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-semibold">Safety Tips</h2>
+              <Card 
+                className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent animate-fade-in"
+                style={{ animationDelay: "300ms" }}
+              >
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold">Pro Safety Tips</h3>
+                      <p className="text-xs text-muted-foreground">Expert recommendations</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {result.tips.map((tip, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-card/50 hover:bg-card transition-colors"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-xs font-bold text-accent">{idx + 1}</span>
+                        </div>
+                        <p className="text-sm leading-relaxed flex-1">{tip}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <ul className="space-y-2">
-                  {result.tips.map((tip, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                      <span>{tip}</span>
-                    </li>
-                  ))}
-                </ul>
               </Card>
             )}
 
-            {/* Actions */}
-            <div className="flex gap-2">
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-2 animate-fade-in" style={{ animationDelay: "400ms" }}>
               <Button
                 onClick={() => {
                   setImage(null);
                   setResult(null);
                 }}
                 variant="outline"
-                className="flex-1"
+                size="lg"
+                className="h-14 font-semibold"
               >
+                <Camera className="w-5 h-5 mr-2" />
                 New Scan
               </Button>
               <Button
                 onClick={() => {
-                  const shareText = `Environment Scan: ${result.environment_context}\n${result.summary.hazard_count} hazards found, ${result.summary.suggestion_count} suggestions provided.`;
+                  const shareText = `🏠 ${result.environment_context} Analysis\n\n⚠️ ${result.summary.hazard_count} hazards detected\n✅ ${result.summary.suggestion_count} improvements suggested`;
                   navigator.share?.({
                     title: "Environment Scan Results",
                     text: shareText,
                   }).catch(() => {
-                    toast.info("Sharing not supported on this device");
+                    navigator.clipboard?.writeText(shareText);
+                    toast.success("Results copied to clipboard!");
                   });
                 }}
-                className="flex-1"
+                size="lg"
+                className="h-14 font-semibold bg-gradient-to-r from-primary to-accent hover:opacity-90"
               >
-                Share Report
+                <Share2 className="w-5 h-5 mr-2" />
+                Share
               </Button>
             </div>
           </div>
