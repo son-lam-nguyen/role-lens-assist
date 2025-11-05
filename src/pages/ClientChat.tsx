@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -40,6 +41,7 @@ const ClientChat = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const sessionIdRef = useRef<string>("");
   const previousMessageCountRef = useRef(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Initialize or retrieve session ID
   useEffect(() => {
@@ -496,6 +498,27 @@ const ClientChat = () => {
     setTimeout(() => handleSend(), 100);
   };
 
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate new height (max 5 lines ~120px on mobile, ~140px on desktop)
+    const maxHeight = window.innerWidth < 768 ? 120 : 140;
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    
+    textarea.style.height = `${newHeight}px`;
+    
+    // Keep chat scrolled to bottom when input expands
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input]);
+
   const handleInsertSnippet = (content: string) => {
     const snippetMessage: ChatMessage = {
       id: `snippet_${Date.now()}`,
@@ -662,15 +685,22 @@ const ClientChat = () => {
                     ))}
                   </div>
 
-                  <div className="flex gap-2 md:gap-3">
-                    <Input
+                  <div className="flex gap-2 md:gap-3 items-end">
+                    <Textarea
+                      ref={textareaRef}
                       placeholder="Share what's on your mind..."
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
                       disabled={isLoading || isRecording}
                       aria-label="Chat message"
-                      className="rounded-xl md:rounded-2xl shadow-soft border-border/40 h-10 md:h-12 px-3 md:px-5 text-sm md:text-base"
+                      rows={1}
+                      className="rounded-xl md:rounded-2xl shadow-soft border-border/40 min-h-[40px] md:min-h-[48px] max-h-[120px] md:max-h-[140px] px-3 md:px-5 py-2.5 md:py-3 text-sm md:text-base resize-none transition-all duration-200 overflow-y-auto"
                     />
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
