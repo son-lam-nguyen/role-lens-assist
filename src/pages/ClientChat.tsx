@@ -576,7 +576,7 @@ const ClientChat = () => {
                           className="shadow-warm bg-gradient-to-r from-accent to-calm-green hover:opacity-90 transition-opacity text-xs md:text-sm h-8 md:h-10 px-3 md:px-4"
                         >
                           <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                          <span className="hidden sm:inline">Talk to </span>Worker
+                          <span className="hidden sm:inline">Talk to </span>Support Worker
                         </Button>
                       )}
                       {humanSupportMode && (
