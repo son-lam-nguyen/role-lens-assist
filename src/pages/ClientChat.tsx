@@ -530,29 +530,30 @@ const ClientChat = () => {
   };
 
   return (
-    <div className="min-h-screen warm-texture">
+    <div className="min-h-screen warm-texture flex flex-col">
       <Navbar />
 
-      <main className="container mx-auto px-4 pt-24 pb-8">
-        <div className="max-w-7xl mx-auto fade-in">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Welcome to Your Support Space
-            </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-              You're not alone. We're here to listen, support, and help you find the right resources.
-            </p>
-          </div>
-
-          {showCrisisBanner && (
-            <div className="mb-6">
-              <CrisisBanner onShowContacts={() => setShowContacts(true)} />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="container mx-auto px-3 md:px-4 pt-20 md:pt-24 pb-2 md:pb-4 flex flex-col h-full">
+          <div className="max-w-7xl mx-auto w-full flex flex-col h-full fade-in">
+            <div className="mb-4 md:mb-6 text-center shrink-0">
+              <h1 className="text-2xl md:text-4xl font-bold mb-2 md:mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Welcome to Your Support Space
+              </h1>
+              <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
+                You're not alone. We're here to listen, support, and help you find the right resources.
+              </p>
             </div>
-          )}
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <Card className="flex flex-col min-h-[calc(100vh-280px)] md:min-h-[calc(100vh-280px)] h-[calc(100vh-180px)] md:h-auto empathy-glow border-border/30 bg-card/95 backdrop-blur-sm">
-              <CardHeader className="pb-3 md:pb-6 border-b border-border/30 px-4 md:px-6 pt-4 md:pt-6">
+            {showCrisisBanner && (
+              <div className="mb-4 md:mb-6 shrink-0">
+                <CrisisBanner onShowContacts={() => setShowContacts(true)} />
+              </div>
+            )}
+
+            <div className="grid gap-4 md:gap-6 lg:grid-cols-[1fr_320px] flex-1 overflow-hidden">
+              <Card className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-240px)] lg:h-auto empathy-glow border-border/30 bg-card/95 backdrop-blur-sm rounded-2xl md:rounded-3xl shadow-lg overflow-hidden">
+                <CardHeader className="pb-3 md:pb-4 border-b border-border/30 px-3 md:px-6 pt-3 md:pt-5 shrink-0">
                   <div className="flex items-center justify-between flex-wrap gap-2 md:gap-4">
                     <div className="flex items-center gap-2 md:gap-4">
                       <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-calm-blue to-warm-teal flex items-center justify-center shadow-warm">
@@ -607,9 +608,9 @@ const ClientChat = () => {
                   </div>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col gap-3 md:gap-6 overflow-hidden p-3 md:p-8 pb-0">
-                <ScrollArea ref={scrollRef} className="flex-1 pr-2 md:pr-6">
-                  <div className="space-y-3 md:space-y-6 pb-3 md:pb-4">
+              <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+                <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 md:py-4 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+                  <div className="space-y-2.5 md:space-y-4 pb-2">
                     {messages.map((message) => (
                       <div
                         key={message.id}
@@ -620,17 +621,17 @@ const ClientChat = () => {
                             <Bot className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                           </div>
                         )}
-                        <div className="flex flex-col gap-1 md:gap-2 max-w-[85%] md:max-w-[80%]">
+                        <div className="flex flex-col gap-1 max-w-[85%] md:max-w-[75%]">
                           <div
-                            className={`rounded-2xl md:rounded-3xl px-3 py-2 md:px-5 md:py-3.5 transition-all ${
+                            className={`rounded-2xl md:rounded-[20px] px-3 py-2 md:px-4 md:py-2.5 transition-all duration-200 ${
                               message.role === "user" 
-                                ? "message-bubble-user text-white shadow-md" 
-                                : "message-bubble-assistant border border-border/20 shadow-sm"
+                                ? "message-bubble-user text-white shadow-sm hover:shadow-md" 
+                                : "message-bubble-assistant border border-border/20 shadow-sm hover:shadow-md"
                             }`}
                           >
-                            <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                            <p className="text-[13px] md:text-[15px] whitespace-pre-wrap leading-relaxed">{message.content}</p>
                           </div>
-                          <p className="text-[10px] md:text-xs text-muted-foreground/60 px-1 md:px-2">
+                          <p className="text-[10px] md:text-xs text-muted-foreground/50 px-2">
                             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
@@ -642,22 +643,22 @@ const ClientChat = () => {
                       </div>
                     ))}
                     {isLoading && (
-                      <div className="flex gap-2 md:gap-4 justify-start animate-fade-in">
-                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
-                          <Bot className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                      <div className="flex gap-2 md:gap-3 justify-start animate-fade-in">
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
+                          <Bot className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                         </div>
-                        <div className="rounded-2xl md:rounded-3xl px-3 py-2 md:px-5 md:py-3.5 message-bubble-assistant border border-border/20">
-                          <div className="flex gap-1.5 md:gap-2">
+                        <div className="rounded-2xl md:rounded-[20px] px-3 py-2 md:px-4 md:py-2.5 message-bubble-assistant border border-border/20 shadow-sm">
+                          <div className="flex gap-1.5">
                             <div
-                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "0ms" }}
                             />
                             <div
-                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "150ms" }}
                             />
                             <div
-                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "300ms" }}
                             />
                           </div>
@@ -666,15 +667,15 @@ const ClientChat = () => {
                     )}
                     <div ref={messagesEndRef} />
                   </div>
-                </ScrollArea>
+                </div>
 
-                <div className="border-t border-border/30 pt-3 md:pt-6 pb-3 md:pb-0 bg-card/95 backdrop-blur-sm sticky bottom-0 -mx-3 md:-mx-8 px-3 md:px-8">
-                  <div className="flex flex-wrap gap-1.5 md:gap-2.5 mb-2.5 md:mb-5">
+                <div className="border-t border-border/30 pt-2.5 md:pt-4 pb-2.5 md:pb-4 px-3 md:px-6 bg-card/98 backdrop-blur-md shrink-0 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
                     {quickReplies.map((reply) => (
                       <Badge
                         key={reply.id}
                         variant="outline"
-                        className="cursor-pointer hover:bg-gradient-to-r hover:from-primary hover:to-calm-blue hover:text-white hover:border-transparent transition-all hover:shadow-soft px-2.5 md:px-4 py-1 md:py-2 text-xs md:text-sm rounded-full border-border/40"
+                        className="cursor-pointer hover:bg-gradient-to-r hover:from-primary hover:to-calm-blue hover:text-white hover:border-transparent transition-all duration-200 hover:shadow-soft px-2 md:px-3 py-0.5 md:py-1 text-[11px] md:text-sm rounded-full border-border/40"
                         onClick={() => handleQuickReply(reply.query)}
                         role="button"
                         tabIndex={0}
@@ -685,7 +686,7 @@ const ClientChat = () => {
                     ))}
                   </div>
 
-                  <div className="flex gap-2 md:gap-3 items-end">
+                  <div className="flex gap-2 items-end">
                     <Textarea
                       ref={textareaRef}
                       placeholder="Share what's on your mind..."
@@ -700,7 +701,7 @@ const ClientChat = () => {
                       disabled={isLoading || isRecording}
                       aria-label="Chat message"
                       rows={1}
-                      className="rounded-xl md:rounded-2xl shadow-soft border-border/40 min-h-[40px] md:min-h-[48px] max-h-[120px] md:max-h-[140px] px-3 md:px-5 py-2.5 md:py-3 text-sm md:text-base resize-none transition-all duration-200 overflow-y-auto"
+                      className="rounded-xl md:rounded-2xl shadow-sm border-border/40 min-h-[42px] md:min-h-[48px] max-h-[120px] md:max-h-[140px] px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base resize-none transition-all duration-200 overflow-y-auto focus:shadow-md"
                     />
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
@@ -708,7 +709,7 @@ const ClientChat = () => {
                       size="icon"
                       aria-label={isRecording ? "Stop recording" : "Record audio"}
                       disabled={isLoading}
-                      className="rounded-xl md:rounded-2xl shadow-soft shrink-0 h-10 w-10 md:h-12 md:w-12 border-border/40"
+                      className="rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 shrink-0 h-[42px] w-[42px] md:h-12 md:w-12 border-border/40"
                     >
                       {isRecording ? <Square className="w-4 h-4 md:w-5 md:h-5" /> : <Mic className="w-4 h-4 md:w-5 md:h-5" />}
                     </Button>
@@ -717,7 +718,7 @@ const ClientChat = () => {
                       disabled={!input.trim() || isLoading || isRecording}
                       size="icon"
                       aria-label="Send message"
-                      className="rounded-xl md:rounded-2xl shadow-warm shrink-0 h-10 w-10 md:h-12 md:w-12 bg-gradient-to-r from-primary to-calm-blue hover:opacity-90 transition-opacity"
+                      className="rounded-xl md:rounded-2xl shadow-md hover:shadow-lg shrink-0 h-[42px] w-[42px] md:h-12 md:w-12 bg-gradient-to-r from-primary to-calm-blue hover:opacity-90 transition-all duration-200"
                     >
                       <Send className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
@@ -843,6 +844,7 @@ const ClientChat = () => {
                 </CardContent>
               </Card>
             </aside>
+            </div>
           </div>
         </div>
       </main>
