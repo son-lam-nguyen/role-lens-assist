@@ -35,7 +35,7 @@ const ClientChat = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [humanSupportMode, setHumanSupportMode] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -54,8 +54,25 @@ const ClientChat = () => {
   }, []);
 
   useEffect(() => {
-    // Update message count reference but don't auto-scroll
+    // Skip auto-scroll on initial load (first message is the welcome message)
+    if (previousMessageCountRef.current === 0) {
+      previousMessageCountRef.current = messages.length;
+      return;
+    }
+
+    // Only auto-scroll if a new message arrived
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
     previousMessageCountRef.current = messages.length;
+
+    if (!hasNewMessage) return;
+
+    // Auto-scroll the messages container (not the entire page)
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -601,7 +618,7 @@ const ClientChat = () => {
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
-                <div className="flex-1 overflow-y-auto px-3 md:px-6 py-3 md:py-4 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-3 md:px-6 py-3 md:py-4 scroll-smooth" style={{ scrollBehavior: 'smooth' }}>
                   <div className="space-y-2.5 md:space-y-4 pb-2">
                     {messages.map((message) => (
                       <div
