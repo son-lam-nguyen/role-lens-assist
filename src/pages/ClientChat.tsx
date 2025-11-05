@@ -54,23 +54,20 @@ const ClientChat = () => {
   }, []);
 
   useEffect(() => {
-    // Only auto-scroll if a new message arrived AND user is at bottom
+    // Skip auto-scroll on initial load (first message is the welcome message)
+    if (previousMessageCountRef.current === 0) {
+      previousMessageCountRef.current = messages.length;
+      return;
+    }
+
+    // Only auto-scroll if a new message arrived
     const hasNewMessage = messages.length > previousMessageCountRef.current;
     previousMessageCountRef.current = messages.length;
 
     if (!hasNewMessage) return;
 
-    const scrollArea = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-    if (!scrollArea) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-
-    const isAtBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 100;
-    
-    if (isAtBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    // Auto-scroll to bottom when new messages arrive
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
@@ -510,9 +507,6 @@ const ClientChat = () => {
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     
     textarea.style.height = `${newHeight}px`;
-    
-    // Keep chat scrolled to bottom when input expands
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
