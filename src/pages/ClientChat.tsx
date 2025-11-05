@@ -528,19 +528,19 @@ const ClientChat = () => {
           )}
 
           <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-            <Card className="flex flex-col min-h-[calc(100vh-280px)] empathy-glow border-border/30 bg-card/95 backdrop-blur-sm">
-              <CardHeader className="pb-6 border-b border-border/30">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-calm-blue to-warm-teal flex items-center justify-center shadow-warm">
-                        {humanSupportMode ? <MessageSquare className="w-7 h-7 text-white" /> : <Bot className="w-7 h-7 text-white" />}
+            <Card className="flex flex-col min-h-[calc(100vh-280px)] md:min-h-[calc(100vh-280px)] h-[calc(100vh-180px)] md:h-auto empathy-glow border-border/30 bg-card/95 backdrop-blur-sm">
+              <CardHeader className="pb-3 md:pb-6 border-b border-border/30 px-4 md:px-6 pt-4 md:pt-6">
+                  <div className="flex items-center justify-between flex-wrap gap-2 md:gap-4">
+                    <div className="flex items-center gap-2 md:gap-4">
+                      <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-gradient-to-br from-calm-blue to-warm-teal flex items-center justify-center shadow-warm">
+                        {humanSupportMode ? <MessageSquare className="w-5 h-5 md:w-7 md:h-7 text-white" /> : <Bot className="w-5 h-5 md:w-7 md:h-7 text-white" />}
                       </div>
                       <div>
-                        <CardTitle className="text-2xl mb-1 font-semibold">
-                          {humanSupportMode ? "Connected with Support Worker" : "Your Support Companion"}
+                        <CardTitle className="text-base md:text-2xl mb-0.5 md:mb-1 font-semibold leading-tight">
+                          {humanSupportMode ? "Support Worker" : "Support Companion"}
                         </CardTitle>
-                        <CardDescription className="text-sm leading-relaxed">
-                          {humanSupportMode ? "You're now chatting with a real person who cares" : "A safe space to talk, learn coping strategies, and find support"}
+                        <CardDescription className="text-xs md:text-sm leading-snug hidden sm:block">
+                          {humanSupportMode ? "You're now chatting with a real person" : "Safe space to talk and find support"}
                         </CardDescription>
                       </div>
                     </div>
@@ -550,18 +550,18 @@ const ClientChat = () => {
                           variant="default" 
                           onClick={requestHumanSupport} 
                           disabled={isLoading}
-                          className="shadow-warm bg-gradient-to-r from-accent to-calm-green hover:opacity-90 transition-opacity"
+                          className="shadow-warm bg-gradient-to-r from-accent to-calm-green hover:opacity-90 transition-opacity text-xs md:text-sm h-8 md:h-10 px-3 md:px-4"
                         >
-                          <MessageSquare className="w-4 h-4 mr-2" />
-                          <span className="hidden sm:inline">Talk to a </span>Support Worker
+                          <MessageSquare className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                          <span className="hidden sm:inline">Talk to </span>Worker
                         </Button>
                       )}
                       {humanSupportMode && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="border-border/50">
-                              <X className="w-4 h-4 mr-2" />
-                              End Chat
+                            <Button variant="outline" size="sm" className="border-border/50 text-xs md:text-sm h-8 md:h-9 px-2 md:px-3">
+                              <X className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1 md:mr-2" />
+                              End
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent className="rounded-3xl">
@@ -584,57 +584,57 @@ const ClientChat = () => {
                   </div>
               </CardHeader>
 
-              <CardContent className="flex-1 flex flex-col gap-6 overflow-hidden p-8">
-                <ScrollArea ref={scrollRef} className="flex-1 pr-6">
-                  <div className="space-y-8">
+              <CardContent className="flex-1 flex flex-col gap-3 md:gap-6 overflow-hidden p-3 md:p-8 pb-0">
+                <ScrollArea ref={scrollRef} className="flex-1 pr-2 md:pr-6">
+                  <div className="space-y-3 md:space-y-6 pb-3 md:pb-4">
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
+                        className={`flex gap-2 md:gap-4 ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in`}
                       >
                         {message.role === "assistant" && (
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
-                            <Bot className="w-6 h-6 text-primary" />
+                          <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
+                            <Bot className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                           </div>
                         )}
-                        <div className="flex flex-col gap-2 max-w-[80%]">
+                        <div className="flex flex-col gap-1 md:gap-2 max-w-[85%] md:max-w-[80%]">
                           <div
-                            className={`rounded-3xl px-6 py-4 ${
+                            className={`rounded-2xl md:rounded-3xl px-3 py-2 md:px-5 md:py-3.5 transition-all ${
                               message.role === "user" 
-                                ? "message-bubble-user text-white" 
-                                : "message-bubble-assistant border border-border/20"
+                                ? "message-bubble-user text-white shadow-md" 
+                                : "message-bubble-assistant border border-border/20 shadow-sm"
                             }`}
                           >
-                            <p className="text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                            <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground/60 px-2">
+                          <p className="text-[10px] md:text-xs text-muted-foreground/60 px-1 md:px-2">
                             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         {message.role === "user" && (
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/15 to-calm-green/15 flex items-center justify-center shrink-0 shadow-soft">
-                            <User className="w-6 h-6 text-accent" />
+                          <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-accent/15 to-calm-green/15 flex items-center justify-center shrink-0 shadow-soft">
+                            <User className="w-4 h-4 md:w-6 md:h-6 text-accent" />
                           </div>
                         )}
                       </div>
                     ))}
                     {isLoading && (
-                      <div className="flex gap-4 justify-start animate-fade-in">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
-                          <Bot className="w-6 h-6 text-primary" />
+                      <div className="flex gap-2 md:gap-4 justify-start animate-fade-in">
+                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-gradient-to-br from-primary/15 to-warm-teal/15 flex items-center justify-center shrink-0 shadow-soft">
+                          <Bot className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                         </div>
-                        <div className="rounded-3xl px-6 py-4 message-bubble-assistant border border-border/20">
-                          <div className="flex gap-2">
+                        <div className="rounded-2xl md:rounded-3xl px-3 py-2 md:px-5 md:py-3.5 message-bubble-assistant border border-border/20">
+                          <div className="flex gap-1.5 md:gap-2">
                             <div
-                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "0ms" }}
                             />
                             <div
-                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "150ms" }}
                             />
                             <div
-                              className="w-2.5 h-2.5 rounded-full bg-primary/60 animate-bounce"
+                              className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-primary/60 animate-bounce"
                               style={{ animationDelay: "300ms" }}
                             />
                           </div>
@@ -645,13 +645,13 @@ const ClientChat = () => {
                   </div>
                 </ScrollArea>
 
-                <div className="border-t border-border/30 pt-6">
-                  <div className="flex flex-wrap gap-2.5 mb-5">
+                <div className="border-t border-border/30 pt-3 md:pt-6 pb-3 md:pb-0 bg-card/95 backdrop-blur-sm sticky bottom-0 -mx-3 md:-mx-8 px-3 md:px-8">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2.5 mb-2.5 md:mb-5">
                     {quickReplies.map((reply) => (
                       <Badge
                         key={reply.id}
                         variant="outline"
-                        className="cursor-pointer hover:bg-gradient-to-r hover:from-primary hover:to-calm-blue hover:text-white hover:border-transparent transition-all hover:shadow-soft px-4 py-2 text-sm rounded-full border-border/40"
+                        className="cursor-pointer hover:bg-gradient-to-r hover:from-primary hover:to-calm-blue hover:text-white hover:border-transparent transition-all hover:shadow-soft px-2.5 md:px-4 py-1 md:py-2 text-xs md:text-sm rounded-full border-border/40"
                         onClick={() => handleQuickReply(reply.query)}
                         role="button"
                         tabIndex={0}
@@ -662,7 +662,7 @@ const ClientChat = () => {
                     ))}
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 md:gap-3">
                     <Input
                       placeholder="Share what's on your mind..."
                       value={input}
@@ -670,7 +670,7 @@ const ClientChat = () => {
                       onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                       disabled={isLoading || isRecording}
                       aria-label="Chat message"
-                      className="rounded-2xl shadow-soft border-border/40 h-12 px-5 text-base"
+                      className="rounded-xl md:rounded-2xl shadow-soft border-border/40 h-10 md:h-12 px-3 md:px-5 text-sm md:text-base"
                     />
                     <Button
                       onClick={isRecording ? stopRecording : startRecording}
@@ -678,18 +678,18 @@ const ClientChat = () => {
                       size="icon"
                       aria-label={isRecording ? "Stop recording" : "Record audio"}
                       disabled={isLoading}
-                      className="rounded-2xl shadow-soft shrink-0 h-12 w-12 border-border/40"
+                      className="rounded-xl md:rounded-2xl shadow-soft shrink-0 h-10 w-10 md:h-12 md:w-12 border-border/40"
                     >
-                      {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                      {isRecording ? <Square className="w-4 h-4 md:w-5 md:h-5" /> : <Mic className="w-4 h-4 md:w-5 md:h-5" />}
                     </Button>
                     <Button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading || isRecording}
                       size="icon"
                       aria-label="Send message"
-                      className="rounded-2xl shadow-warm shrink-0 h-12 w-12 bg-gradient-to-r from-primary to-calm-blue hover:opacity-90 transition-opacity"
+                      className="rounded-xl md:rounded-2xl shadow-warm shrink-0 h-10 w-10 md:h-12 md:w-12 bg-gradient-to-r from-primary to-calm-blue hover:opacity-90 transition-opacity"
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
                   </div>
                 </div>
