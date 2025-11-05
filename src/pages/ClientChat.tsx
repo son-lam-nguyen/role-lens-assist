@@ -54,20 +54,8 @@ const ClientChat = () => {
   }, []);
 
   useEffect(() => {
-    // Skip auto-scroll on initial load (first message is the welcome message)
-    if (previousMessageCountRef.current === 0) {
-      previousMessageCountRef.current = messages.length;
-      return;
-    }
-
-    // Only auto-scroll if a new message arrived
-    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    // Update message count reference but don't auto-scroll
     previousMessageCountRef.current = messages.length;
-
-    if (!hasNewMessage) return;
-
-    // Auto-scroll to bottom when new messages arrive
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
@@ -271,6 +259,11 @@ const ClientChat = () => {
     setInput("");
     setIsLoading(true);
 
+    // Keep focus on input field after sending
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+
     // Check for crisis keywords
     if (detectCrisis(messageText)) {
       setShowCrisisBanner(true);
@@ -369,6 +362,10 @@ const ClientChat = () => {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      // Refocus input after response is received
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -491,7 +488,8 @@ const ClientChat = () => {
 
   const handleQuickReply = async (query: string) => {
     setInput(query);
-    // Trigger send after a brief delay to show the input
+    // Focus input and trigger send
+    textareaRef.current?.focus();
     setTimeout(() => handleSend(), 100);
   };
 
